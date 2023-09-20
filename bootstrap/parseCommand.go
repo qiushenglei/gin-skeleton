@@ -5,6 +5,7 @@ import (
 	"github.com/qiushenglei/gin-skeleton/app/configs"
 	"github.com/qiushenglei/gin-skeleton/app/crontabs"
 	"github.com/qiushenglei/gin-skeleton/app/global/utils"
+	"github.com/qiushenglei/gin-skeleton/pkg/logs"
 	routes "github.com/qiushenglei/gin-skeleton/routes/http"
 	"github.com/robfig/cron/v3"
 	"github.com/spf13/cobra"
@@ -88,7 +89,7 @@ func RunCrontab(cmd *cobra.Command, args []string) {
 	for _, eachJob := range crontabs.JobList {
 		_, err := c.AddFunc(eachJob.Schedule, eachJob.Fn)
 		if err != nil {
-			logs.Log.Error(err.Error())
+			logs.Log.Error(context.Background(), err.Error())
 			panic(err)
 		}
 	}

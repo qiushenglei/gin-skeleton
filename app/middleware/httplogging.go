@@ -2,6 +2,7 @@ package middleware
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/qiushenglei/gin-skeleton/pkg/logs"
@@ -57,6 +58,7 @@ func LogRequest() gin.HandlerFunc {
 		c.Next()
 
 		logs.Log.Info(
+			context.Background(),
 			string(requestBody),
 			logWriter.responseBody.String(),
 		)

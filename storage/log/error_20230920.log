@@ -8,3 +8,4 @@
 2023-09-20T15:18:00.013+0800	ERROR	crontabs/crontab.go:26	run Job
 2023-09-20T15:19:00.012+0800	ERROR	crontabs/crontab.go:26	run Job
 2023-09-20T15:20:00.010+0800	ERROR	crontabs/crontab.go:26	run Job
+2023-09-20T16:47:00.027+0800	ERROR	logs/logger.go:29	run JobRequestID:%!s(<nil>)

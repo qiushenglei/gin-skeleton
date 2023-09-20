@@ -41,7 +41,7 @@ var levelEnableMap = map[string]zap.LevelEnablerFunc{
 func RegisterLogger() (func() error, error) {
 	var err error
 	Log, err = getInitLogger(configs.EnvConfig.GetString("LOG_PATH"), configs.EnvConfig.GetString("LOG_EXT"))
-	Log.Warn()
+	//Log.Warn()
 	if err != nil {
 		return nil, err
 	}

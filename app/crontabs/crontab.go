@@ -1,6 +1,7 @@
 package crontabs
 
 import (
+	"context"
 	"fmt"
 	"github.com/qiushenglei/gin-skeleton/pkg/logs"
 )
@@ -23,5 +24,5 @@ type Job struct {
 
 func ExampleJob() {
 	fmt.Println("run Job")
-	logs.Log.Error("run Job")
+	logs.Log.Error(context.Background(), "run Job")
 }

@@ -5,6 +5,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/qiushenglei/gin-skeleton/app/configs"
 	"github.com/qiushenglei/gin-skeleton/app/data"
+	"github.com/qiushenglei/gin-skeleton/pkg/logs"
 	"golang.org/x/net/context"
 	"os"
 	"os/signal"
@@ -92,7 +93,7 @@ func closeAllClosers(ctx context.Context, cancel context.CancelFunc, closers []f
 	// 释放所有占有的资源
 	for _, closer := range closers {
 		if err := closer(); err != nil {
-			logs.Log.Error(err)
+			logs.Log.Error(ctx, err)
 		}
 	}
 }
