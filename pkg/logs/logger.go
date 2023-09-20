@@ -2,7 +2,7 @@ package logs
 
 import (
 	"context"
-	"fmt"
+	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 )
 
@@ -20,26 +20,30 @@ func NewLogger(zapLogger *zap.SugaredLogger) *Logger {
 }
 
 func (l *Logger) Error(ctx context.Context, args ...interface{}) {
-	requestId := fmt.Sprintf("RequestID:%s", retStringRequestID(ctx))
-	args = append(args, requestId)
+	args = l.addRequestID(ctx, args)
 	l.zapLogger.Error(args...)
 }
 
 func (l *Logger) Info(ctx context.Context, args ...interface{}) {
-	requestId := fmt.Sprintf("RequestID:%s", retStringRequestID(ctx))
-	args = append(args, requestId)
+	args = l.addRequestID(ctx, args)
 	l.zapLogger.Info(args...)
 }
 
 func (l *Logger) Warn(ctx context.Context, args ...interface{}) {
-	requestId := fmt.Sprintf("RequestID:%s", retStringRequestID(ctx))
-	args = append(args, requestId)
+	args = l.addRequestID(ctx, args)
 	l.zapLogger.Warn(args...)
 }
 
 func retStringRequestID(ctx context.Context) string {
-	if rid, ok := ctx.Value("RequestID").(string); ok == true {
-		return rid
+	ginCtx, ok := ctx.(*gin.Context)
+	if ok == false {
+		return ""
 	}
-	return ""
+	return ginCtx.GetString("RequestID")
+}
+
+func (l *Logger) addRequestID(ctx context.Context, arg []interface{}) []interface{} {
+	rid := retStringRequestID(ctx)
+	arg = append(arg, zap.String("requestID", rid))
+	return arg
 }

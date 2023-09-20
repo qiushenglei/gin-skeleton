@@ -1,6 +1,7 @@
 package middleware
 
 import (
+	"fmt"
 	"github.com/gin-gonic/gin"
 	"math/rand"
 )
@@ -10,7 +11,7 @@ func BindRequestID() gin.HandlerFunc {
 		// 生成unique，用雪花
 		//这里先写成随机值
 		rid := rand.Int31()
-		context.Set("RequestID", rid)
+		context.Set("RequestID", fmt.Sprintf("%d", rid))
 		context.Next()
 	}
 }

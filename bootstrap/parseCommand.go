@@ -16,9 +16,9 @@ var (
 	//命令行参数
 	RootCmd = &cobra.Command{}
 
-	// 因为这里是子命令行run，所以build之后，还需要./e_photo_goods.exe run -e .env.local -p 10011
+	// 因为这里是子命令行web，所以build之后，还需要./e_photo_goods.exe run -e .env.local -p 10011
 	ServerCmd = &cobra.Command{
-		Use:              "run",
+		Use:              "web",
 		Short:            "启动 web 服务",
 		Long:             "启动 web 服务",
 		Run:              RunHttpServer,

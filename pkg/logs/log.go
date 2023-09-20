@@ -68,27 +68,42 @@ func getInitLogger(filepath, fileext string) (*Logger, error) {
 	core := zapcore.NewTee(
 		cores...,
 	)
-	loggers := zap.New(core, zap.AddCaller())
+	loggers := zap.New(core, zap.AddCaller(), zap.AddCallerSkip(1))
 
 	return NewLogger(loggers.Sugar()), nil
 }
 
 // Encoder
 func getEncoder() zapcore.Encoder {
-	encoderConfig := zap.NewProductionEncoderConfig()
+	encoderConfig := zapcore.EncoderConfig{
+		MessageKey:     "message",
+		LevelKey:       "level",
+		TimeKey:        "time",
+		NameKey:        "logger",
+		CallerKey:      "caller",
+		FunctionKey:    zapcore.OmitKey,
+		StacktraceKey:  zapcore.OmitKey,
+		LineEnding:     zapcore.DefaultLineEnding,
+		EncodeLevel:    zapcore.LowercaseLevelEncoder,
+		EncodeTime:     zapcore.ISO8601TimeEncoder,
+		EncodeDuration: zapcore.SecondsDurationEncoder,
+		EncodeCaller:   zapcore.FullCallerEncoder,
+	}
+	//encoderConfig := zap.NewProductionEncoderConfig()
 	//encoderConfig := zap.NewDevelopmentEncoderConfig()
-	encoderConfig.EncodeTime = zapcore.ISO8601TimeEncoder
-	encoderConfig.EncodeLevel = zapcore.CapitalLevelEncoder
-	return zapcore.NewConsoleEncoder(encoderConfig)
+	//encoderConfig.EncodeTime = zapcore.ISO8601TimeEncoder
+	//encoderConfig.EncodeLevel = zapcore.CapitalLevelEncoder
+	//return zapcore.NewConsoleEncoder(encoderConfig)
+	return zapcore.NewJSONEncoder(encoderConfig)
 }
 
 // LogWriter
 func getLogWriter(filePath, fileext string) (zapcore.WriteSyncer, error) {
-	warnIoWriter, err := getWriter(filePath, fileext)
+	ioWriter, err := getWriter(filePath, fileext)
 	if err != nil {
 		return nil, err
 	}
-	return zapcore.AddSync(warnIoWriter), nil
+	return zapcore.AddSync(ioWriter), nil
 }
 
 // 日志文件切割，按天

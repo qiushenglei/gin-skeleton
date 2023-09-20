@@ -13,3 +13,4 @@
 2023-09-20T17:01:00.014+0800	ERROR	logs/logger.go:28	run JobRequestID:%!s(<nil>)
 2023-09-20T17:02:00.011+0800	ERROR	logs/logger.go:28	run JobRequestID:%!s(<nil>)
 2023-09-20T17:03:00.012+0800	ERROR	logs/logger.go:28	run JobRequestID:%!s(<nil>)
+2023-09-20T17:05:00.028+0800	ERROR	logs/logger.go:25	run JobRequestID:

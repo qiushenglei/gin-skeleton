@@ -2,10 +2,10 @@ package middleware
 
 import (
 	"bytes"
-	"context"
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/qiushenglei/gin-skeleton/pkg/logs"
+	"go.uber.org/zap"
 	"io"
 )
 
@@ -22,7 +22,7 @@ func (w LoggingWriter) Write(p []byte) (int, error) {
 	return w.ResponseWriter.Write(p)
 }
 
-func LogRequest() gin.HandlerFunc {
+func LogRequest1() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var requestBody []byte
 		if c.Request.Body != nil {
@@ -58,9 +58,9 @@ func LogRequest() gin.HandlerFunc {
 		c.Next()
 
 		logs.Log.Info(
-			context.Background(),
-			string(requestBody),
-			logWriter.responseBody.String(),
+			c,
+			zap.String("requestBody", string(requestBody)),
+			zap.String("responseBody", logWriter.responseBody.String()),
 		)
 	}
 }

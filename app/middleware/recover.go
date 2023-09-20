@@ -6,7 +6,7 @@ import (
 	"github.com/qiushenglei/gin-skeleton/pkg/logs"
 )
 
-func recover() gin.HandlerFunc {
+func GlobalRecover() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		defer func() {
 			if r := recover(); r != nil {
