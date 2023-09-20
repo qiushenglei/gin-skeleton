@@ -1,0 +1,98 @@
+package bootstrap
+
+import (
+	"fmt"
+	"github.com/gin-gonic/gin"
+	"github.com/qiushenglei/gin-skeleton/app/configs"
+	"github.com/qiushenglei/gin-skeleton/app/data"
+	"golang.org/x/net/context"
+	"os"
+	"os/signal"
+	"time"
+)
+
+// RegistAll regists everything (Configs, Loggers, Data Connections, etc.) but the routes
+func RegistAll() (closers []func() error) {
+
+	// 注册 配置文件
+	err := registerConfig()
+	if err != nil {
+		panic("Failed to regist config: " + err.Error())
+	}
+
+	// 注册 Logger
+	syncers, err := logs.RegisterLogger()
+	if err != nil {
+		panic("Failed to regist logger: " + err.Error())
+	}
+
+	// 注册 数据层的连接
+	dataClosers, err := data.RegistData()
+	if err != nil {
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		closeAllClosers(ctx, cancel, closers)
+		panic("Failed to regist data connections: " + err.Error())
+	}
+	closers = append(closers, dataClosers...)
+
+	// 最后再显式地注册日志 syncers 到 closers 中。这样，日志文件最后关闭
+	closers = append(closers, syncers)
+
+	// RET
+	return
+}
+
+func registerConfig() (err error) {
+
+	// 读取 `.env` 文件的信息，存入配置文件的全局变量
+	if parseEnv() != nil {
+		return
+	}
+
+	//if configs.EnvConfig, err = env.CreateEnvFactory(configs.BasePath, configs.EnvFile); err != nil {
+	//	return
+	//}
+	//log.ErrorLogFile = configs.EnvConfig.GetString("APP_NAME") + "_exception"
+	//log.RequestLogFile = configs.EnvConfig.GetString("APP_NAME") + "_request"
+	//log.CallLogFile = configs.EnvConfig.GetString("APP_NAME") + "_call"
+	//log.DebugLogFile = configs.EnvConfig.GetString("APP_NAME") + "_debug"
+
+	// 设置运行模式
+	configs.AppRunMode = configs.EnvConfig.GetString("RUN_MODE")
+	gin.SetMode(configs.AppRunMode)
+
+	// RET
+	return
+}
+
+// ListenSignal 监听信号
+func ListenSignal() {
+	quit := make(chan os.Signal, 1)
+	signal.Notify(quit, os.Interrupt)
+	fmt.Println("挂起协程") // graceful shutdown
+	<-quit
+	fmt.Println("\nShutdown all server ...")
+}
+
+// GracefulShutdown frees all resources prior to exiting
+func GracefulShutdown(closers []func() error) {
+
+	// 设置五秒超时的 graceful shutdown
+	defer fmt.Println("Server has been gracefully shutdown ...")
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+
+	// 释放所有资源
+	closeAllClosers(ctx, cancel, closers)
+}
+
+// closeAllClosers simply closes all the closer functions, in other words, frees all resources
+func closeAllClosers(ctx context.Context, cancel context.CancelFunc, closers []func() error) {
+	defer cancel()
+
+	// 释放所有占有的资源
+	for _, closer := range closers {
+		if err := closer(); err != nil {
+			logs.Log.Error(err)
+		}
+	}
+}
