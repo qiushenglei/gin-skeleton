@@ -19,30 +19,27 @@ func NewLogger(zapLogger *zap.SugaredLogger) *Logger {
 	return l
 }
 
-func (l *Logger) A() {
-
-}
-
 func (l *Logger) Error(ctx context.Context, args ...interface{}) {
-	requestId := fmt.Sprintf("RequestID:%s", ctx.Value("RequestID"))
+	requestId := fmt.Sprintf("RequestID:%s", retStringRequestID(ctx))
 	args = append(args, requestId)
 	l.zapLogger.Error(args...)
 }
 
 func (l *Logger) Info(ctx context.Context, args ...interface{}) {
-	requestId := fmt.Sprintf("RequestID:%s", ctx.Value("RequestID"))
+	requestId := fmt.Sprintf("RequestID:%s", retStringRequestID(ctx))
 	args = append(args, requestId)
 	l.zapLogger.Info(args...)
 }
 
 func (l *Logger) Warn(ctx context.Context, args ...interface{}) {
-	requestId := fmt.Sprintf("RequestID:%s", ctx.Value("RequestID"))
+	requestId := fmt.Sprintf("RequestID:%s", retStringRequestID(ctx))
 	args = append(args, requestId)
 	l.zapLogger.Warn(args...)
 }
 
-func (l *Logger) Test(ctx context.Context, args ...interface{}) {
-	requestId := fmt.Sprintf("RequestID:%s", ctx.Value("RequestID"))
-	args = append(args, requestId)
-	l.zapLogger.Warn(args...)
+func retStringRequestID(ctx context.Context) string {
+	if rid, ok := ctx.Value("RequestID").(string); ok == true {
+		return rid
+	}
+	return ""
 }
