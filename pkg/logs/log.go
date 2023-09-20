@@ -1,7 +1,6 @@
 package logs
 
 import (
-	"context"
 	rotatelogs "github.com/lestrrat/go-file-rotatelogs"
 	"github.com/qiushenglei/gin-skeleton/app/configs"
 	"go.uber.org/zap"
@@ -41,10 +40,8 @@ var levelEnableMap = map[string]zap.LevelEnablerFunc{
 // RegisterLogger 注册日志
 func RegisterLogger() (func() error, error) {
 	var err error
-	Log := &Logger{}
-	Log.Warn(context.TODO(), 1123)
-
 	Log, err = getInitLogger(configs.EnvConfig.GetString("LOG_PATH"), configs.EnvConfig.GetString("LOG_EXT"))
+	Log.Warn()
 	if err != nil {
 		return nil, err
 	}
