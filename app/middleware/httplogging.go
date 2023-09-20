@@ -22,7 +22,7 @@ func (w LoggingWriter) Write(p []byte) (int, error) {
 	return w.ResponseWriter.Write(p)
 }
 
-func LogRequest1() gin.HandlerFunc {
+func LogRequest() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var requestBody []byte
 		if c.Request.Body != nil {

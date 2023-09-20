@@ -2,8 +2,6 @@ package bootstrap
 
 import (
 	"fmt"
-	"github.com/gin-gonic/gin"
-	"github.com/qiushenglei/gin-skeleton/app/configs"
 	"github.com/qiushenglei/gin-skeleton/app/data"
 	"github.com/qiushenglei/gin-skeleton/pkg/logs"
 	"golang.org/x/net/context"
@@ -49,18 +47,6 @@ func registerConfig() (err error) {
 	if parseEnv() != nil {
 		return
 	}
-
-	//if configs.EnvConfig, err = env.CreateEnvFactory(configs.BasePath, configs.EnvFile); err != nil {
-	//	return
-	//}
-	//log.ErrorLogFile = configs.EnvConfig.GetString("APP_NAME") + "_exception"
-	//log.RequestLogFile = configs.EnvConfig.GetString("APP_NAME") + "_request"
-	//log.CallLogFile = configs.EnvConfig.GetString("APP_NAME") + "_call"
-	//log.DebugLogFile = configs.EnvConfig.GetString("APP_NAME") + "_debug"
-
-	// 设置运行模式
-	configs.AppRunMode = configs.EnvConfig.GetString("RUN_MODE")
-	gin.SetMode(configs.AppRunMode)
 
 	// RET
 	return

@@ -2,11 +2,16 @@ package utils
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
+	req "github.com/imroc/req/v2"
+	"github.com/qiushenglei/gin-skeleton/app/configs"
+	"github.com/qiushenglei/gin-skeleton/app/global/constants"
+	"github.com/qiushenglei/gin-skeleton/pkg/logs"
+	"go.uber.org/zap"
+	"io"
 	"io/ioutil"
 	"net/http"
-
-	"github.com/imroc/req"
 )
 
 // RequestB ... `requestType` 一般是 "GET" 或者 "POST"，参数放在请求Body里
@@ -16,7 +21,7 @@ func RequestB(requestType string, url string, reqData map[string]interface{}) (m
 	req.Header.Set("Content-Type", "application/json;charset=UTF-8")
 
 	resp, _ := (&http.Client{}).Do(req)
-	body, _ := ioutil.ReadAll(resp.Body)
+	body, _ := io.ReadAll(resp.Body)
 
 	resData := map[string]interface{}{}
 	err := json.Unmarshal(body, &resData)
@@ -67,26 +72,82 @@ func RequestU(requestType string, url string, reqData map[string]string) (ret ma
 	return
 }
 
-// HttpPost http 请求
-func HttpPost(url string, data interface{}, reply interface{}) (err error) {
-	header := req.Header{
-		"Accept": "application/json",
-	}
-	r, err := req.Post(url, header, req.BodyJSON(data))
-	if err != nil {
-		return
+// HttpPost Post 请求
+func HttpPost(ctx context.Context, url string, body interface{}, reply interface{}, isContinue bool) (err error) {
+	// 创建一个客户端
+	c := req.NewClient()
+
+	// 如果是debug模式，打印结果到console
+	if configs.AppRunMode == constants.DebugMode {
+		c = c.DevMode()
 	}
 
-	resBody, err := r.ToBytes()
-	if err != nil {
-		return
-	}
-	defer r.Response().Body.Close()
+	// 发起post请求
+	resp, err := c.R().
+		SetBody(body).    // 设置request body
+		SetResult(reply). // unmarshal 到 reply结构体内
+		Post(url)
 
-	if err = json.Unmarshal(resBody, reply); err != nil {
-		//log.ErrorLogger.Error(err.Error())
+	err = handleResponse(resp, err)
+
+	// 如果请求失败结束不在继续业务员，则结束goroutine(向外层抛panic)
+	if isContinue == false && err != nil {
+		logs.Log.Error(ctx, zap.String("url", url), zap.Any("request", body), zap.Any("response", reply))
+		panic(err.Error())
+	}
+
+	// 记录日志
+	logs.Log.Error(ctx, zap.String("url", url), zap.Any("request", body), zap.Any("response", reply))
+
+	return err
+}
+
+// HttpPost Get 请求
+func HttpGet(ctx context.Context, url string, body map[string]string, reply interface{}, isContinue bool) (err error) {
+	// 创建一个客户端
+	c := req.NewClient()
+
+	// 如果是debug模式，打印结果到console
+	if configs.AppRunMode == constants.DebugMode {
+		c = c.DevMode()
+	}
+
+	// 发起post请求
+	resp, err := c.R().
+		SetQueryParams(body). // 设置get请求参数
+		SetResult(reply).     // unmarshal 到 reply结构体内
+		Get(url)
+
+	err = handleResponse(resp, err)
+
+	// 如果请求失败结束不在继续业务员，则结束goroutine(向外层抛panic)
+	if isContinue == false && err != nil {
+		logs.Log.Error(ctx, zap.String("url", url), zap.Any("request", body), zap.Any("response", reply))
+		panic(err.Error())
+	}
+
+	// 记录日志
+	logs.Log.Error(ctx, zap.String("url", url), zap.Any("request", body), zap.Any("response", reply))
+
+	return err
+}
+
+func handleResponse(resp *req.Response, err error) error {
+
+	// 请求失败，panic直接往上层抛panic
+	if err != nil {
+		return err
+	}
+
+	// 200~299判断业务成功
+	if resp.IsSuccess() {
 		return nil
 	}
 
-	return err
+	// >=400 客户端错误 或 服务端错误
+	if resp.IsError() {
+		return err
+	}
+
+	return nil
 }

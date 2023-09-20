@@ -2,8 +2,10 @@ package bootstrap
 
 import (
 	"context"
+	"github.com/gin-gonic/gin"
 	"github.com/qiushenglei/gin-skeleton/app/configs"
 	"github.com/qiushenglei/gin-skeleton/app/crontabs"
+	"github.com/qiushenglei/gin-skeleton/app/global/constants"
 	"github.com/qiushenglei/gin-skeleton/app/global/utils"
 	"github.com/qiushenglei/gin-skeleton/pkg/logs"
 	routes "github.com/qiushenglei/gin-skeleton/routes/http"
@@ -39,6 +41,7 @@ func CmdExecute() {
 	RootCmd.PersistentFlags().StringVarP(&configs.BasePath, "base_path", "b", "./", "项目根目录")
 	RootCmd.PersistentFlags().StringVarP(&configs.EnvFile, "env_file", "e", ".env", ".env文件名称")
 	RootCmd.PersistentFlags().StringVarP(&configs.HttpPort, "http_port", "p", "10011", "http端口")
+	RootCmd.PersistentFlags().StringVarP(&configs.AppRunMode, "mode", "m", constants.ReleaseMode, "运行模式")
 
 	RootCmd.AddCommand(ServerCmd, CrontabCmd)
 	if err := RootCmd.Execute(); err != nil {
@@ -55,6 +58,10 @@ func HttpServerPersistentPreRun(cmd *cobra.Command, args []string) {
 func RunHttpServer(cmd *cobra.Command, args []string) {
 	// 注册除了路由以外的所有东西
 	closers := RegistAll()
+
+	// 设置gin运行模式
+	gin.SetMode(configs.AppRunMode)
+
 	// 注册路由
 	r := routes.RegisterRoutes()
 
