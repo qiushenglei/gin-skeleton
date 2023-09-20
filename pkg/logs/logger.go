@@ -1,9 +1,9 @@
 package logs
 
 import (
+	"context"
 	"fmt"
 	"go.uber.org/zap"
-	"golang.org/x/net/context"
 )
 
 var Log *Logger
