@@ -3,6 +3,7 @@ package bootstrap
 import (
 	"fmt"
 	"github.com/qiushenglei/gin-skeleton/app/data"
+	"github.com/qiushenglei/gin-skeleton/app/mq"
 	"github.com/qiushenglei/gin-skeleton/pkg/logs"
 	"golang.org/x/net/context"
 	"os"
@@ -26,13 +27,16 @@ func RegistAll() (closers []func() error) {
 	}
 
 	// 注册 数据层的连接
-	dataClosers, err := data.RegistData()
+	dataClosers, err := data.RegisterData()
 	if err != nil {
 		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 		closeAllClosers(ctx, cancel, closers)
 		panic("Failed to regist data connections: " + err.Error())
 	}
 	closers = append(closers, dataClosers...)
+
+	// 注册 MQ
+	mq.RegisterMQ()
 
 	// 最后再显式地注册日志 syncers 到 closers 中。这样，日志文件最后关闭
 	closers = append(closers, syncers)

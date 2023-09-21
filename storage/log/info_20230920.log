@@ -1,0 +1,91 @@
+2023-09-20T17:06:41.681+0800	INFO	logs/logger.go:31	{
+    "app_id":"aaa",
+    "user_id":"bbbb",
+    "key":"name",
+    "value":"qsl"
+}{"code":0,"msg":"success","data":null}RequestID:
+2023-09-20T17:07:56.217+0800	INFO	logs/logger.go:31	{
+    "app_id":"aaa",
+    "user_id":"bbbb",
+    "key":"name",
+    "value":"qsl"
+}{"code":0,"msg":"success","data":null}RequestID:
+2023-09-20T17:11:07.248+0800	INFO	logs/logger.go:31	{
+    "app_id":"aaa",
+    "user_id":"bbbb",
+    "key":"name",
+    "value":"qsl"
+}{"code":0,"msg":"success","data":null}RequestID:
+2023-09-20T17:11:38.846+0800	INFO	logs/logger.go:31	{
+    "app_id":"aaa",
+    "user_id":"bbbb",
+    "key":"name",
+    "value":"qsl"
+}{"code":0,"msg":"success","data":null}RequestID:
+2023-09-20T17:11:51.378+0800	INFO	logs/logger.go:31	{
+    "app_id":"aaa",
+    "user_id":"bbbb",
+    "key":"name",
+    "value":"qsl"
+}{"code":0,"msg":"success","data":null}RequestID:
+2023-09-20T17:17:07.264+0800	INFO	logs/logger.go:31	{
+    "app_id":"aaa",
+    "user_id":"bbbb",
+    "key":"name",
+    "value":"qsl"
+}{"code":0,"msg":"success","data":null}RequestID:
+2023-09-20T17:23:00.249+0800	INFO	logs/logger.go:31	{
+    "app_id":"aaa",
+    "user_id":"bbbb",
+    "key":"name",
+    "value":"qsl"
+}{"code":0,"msg":"success","data":null}RequestID:
+2023-09-20T17:41:46.864+0800	INFO	logs/logger.go:31	{
+    "app_id":"aaa",
+    "user_id":"bbbb",
+    "key":"name",
+    "value":"qsl"
+}{"code":0,"msg":"success","data":null}RequestID:
+2023-09-20T17:42:11.036+0800	INFO	logs/logger.go:32	{
+    "app_id":"aaa",
+    "user_id":"bbbb",
+    "key":"name",
+    "value":"qsl"
+}{"code":0,"msg":"success","data":null}RequestID:
+2023-09-20T17:43:21.360+0800	INFO	logs/logger.go:32	{
+    "app_id":"aaa",
+    "user_id":"bbbb",
+    "key":"name",
+    "value":"qsl"
+}{"code":0,"msg":"success","data":null}RequestID:
+2023-09-20T17:44:21.655+0800	INFO	logs/logger.go:32	{
+    "app_id":"aaa",
+    "user_id":"bbbb",
+    "key":"name",
+    "value":"qsl"
+}{"code":0,"msg":"success","data":null}RequestID:�
+2023-09-20T17:46:11.690+0800	INFO	logs/logger.go:32	{
+    "app_id":"aaa",
+    "user_id":"bbbb",
+    "key":"name",
+    "value":"qsl"
+}{"code":0,"msg":"success","data":null}RequestID:�
+2023-09-20T17:46:31.832+0800	INFO	logs/logger.go:32	{
+    "app_id":"aaa",
+    "user_id":"bbbb",
+    "key":"name",
+    "value":"qsl"
+}{"code":0,"msg":"success","data":null}RequestID:1298498081
+{"level":"INFO","ts":"2023-09-20T17:49:51.519+0800","caller":"logs/logger.go:32","msg":"{\r\n    \"app_id\":\"aaa\",\r\n    \"user_id\":\"bbbb\",\r\n    \"key\":\"name\",\r\n    \"value\":\"qsl\"\r\n}{\"code\":0,\"msg\":\"success\",\"data\":null}RequestID:1298498081"}
+{"level":"INFO","ts":"2023-09-20T17:55:56.138+0800","caller":"logs/logger.go:29","msg":"{requestBody 15 0 {\r\n    \"app_id\":\"aaa\",\r\n    \"user_id\":\"bbbb\",\r\n    \"key\":\"name\",\r\n    \"value\":\"qsl\"\r\n} <nil>} {responseBody 15 0 {\"code\":0,\"msg\":\"success\",\"data\":null} <nil>}"}
+{"level":"INFO","ts":"2023-09-20T18:00:02.239+0800","caller":"logs/logger.go:29","msg":"{requestBody 15 0 {\r\n    \"app_id\":\"aaa\",\r\n    \"user_id\":\"bbbb\",\r\n    \"key\":\"name\",\r\n    \"value\":\"qsl\"\r\n} <nil>} {responseBody 15 0 {\"code\":0,\"msg\":\"success\",\"data\":null} <nil>}"}
+{"level":"INFO","ts":"2023-09-20T18:00:41.189+0800","caller":"logs/logger.go:29","msg":"[{requestBody 15 0 {\r\n    \"app_id\":\"aaa\",\r\n    \"user_id\":\"bbbb\",\r\n    \"key\":\"name\",\r\n    \"value\":\"qsl\"\r\n} <nil>} {responseBody 15 0 {\"code\":0,\"msg\":\"success\",\"data\":null} <nil>}] {requestID 15 0 1298498081 <nil>}"}
+{"level":"INFO","ts":"2023-09-20T18:02:37.109+0800","caller":"logs/logger.go:29","msg":"[{requestBody 15 0 {\r\n    \"app_id\":\"aaa\",\r\n    \"user_id\":\"bbbb\",\r\n    \"key\":\"name\",\r\n    \"value\":\"qsl\"\r\n} <nil>} {responseBody 15 0 {\"code\":0,\"msg\":\"success\",\"data\":null} <nil>}] {requestID 15 0 2019727887 <nil>}"}
+{"level":"INFO","ts":"2023-09-20T18:06:28.500+0800","caller":"middleware/httplogging.go:60","msg":"{requestBody 15 0 {\r\n    \"app_id\":\"aaa\",\r\n    \"user_id\":\"bbbb\",\r\n    \"key\":\"name\",\r\n    \"value\":\"qsl\"\r\n} <nil>} {responseBody 15 0 {\"code\":0,\"msg\":\"success\",\"data\":null} <nil>} {requestID 15 0 1298498081 <nil>}"}
+2023-09-20T18:11:20.754+0800	info	F:/go_code/gin-skeleton/app/middleware/httplogging.go:60	{requestBody 15 0 {
+    "app_id":"aaa",
+    "user_id":"bbbb",
+    "key":"name",
+    "value":"qsl"
+} <nil>} {responseBody 15 0 {"code":0,"msg":"success","data":null} <nil>} {requestID 15 0 1298498081 <nil>}
+{"level":"info","time":"2023-09-20T18:12:39.062+0800","caller":"F:/go_code/gin-skeleton/app/middleware/httplogging.go:60","message":"{requestBody 15 0 {\r\n    \"app_id\":\"aaa\",\r\n    \"user_id\":\"bbbb\",\r\n    \"key\":\"name\",\r\n    \"value\":\"qsl\"\r\n} <nil>} {responseBody 15 0 {\"code\":0,\"msg\":\"success\",\"data\":null} <nil>} {requestID 15 0 1298498081 <nil>}"}

@@ -39,7 +39,13 @@ type MongoCli struct {
 }
 
 // RegisterData makes new connections to MySQL, Redis, and Kafka, adn returns the closer functions of them
-func RegistData() (closers []func() error, err error) {
+func RegisterData() (closers []func() error, err error) {
+
+	isRegister := configs.EnvConfig.GetInt("REGISTER_DATA")
+	if isRegister == 0 {
+		return
+	}
+
 	DBConfig := &gorm.Config{
 		Logger: logger.Default.LogMode(logger.Info),
 	}
