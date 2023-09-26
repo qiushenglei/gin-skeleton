@@ -1,7 +1,6 @@
 package localrocket
 
 import (
-	"context"
 	"github.com/qiushenglei/gin-skeleton/pkg/rocketpkg"
 	"github.com/qiushenglei/gin-skeleton/pkg/rocketpkg/products"
 )
@@ -12,9 +11,10 @@ const (
 
 var (
 	// EventMap 定义事件
-	EventMap rocketpkg.EventConf = rocketpkg.EventConf{
+	EventMap = rocketpkg.EventConf{
 		OrderEvent: rocketpkg.Event{
 			Topic: "order",
+			Tags:  []string{"A", "B"},
 		},
 	}
 
@@ -24,5 +24,6 @@ var (
 
 func RegisterRocketMQProducer() {
 	Producer = products.NewProducer(EventMap)
-	Producer.SendMsg(context.Background(), OrderEvent, []int{1, 2, 3})
+	// 测试发送
+	//Producer.SendMsg(context.Background(), OrderEvent, []int{1, 2, 3})
 }

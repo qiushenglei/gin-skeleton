@@ -8,4 +8,4 @@ COPY broker.conf /home/rocketmq/rocketmq-5.1.3/conf/broker.conf
 
 WORKDIR /home/rocketmq/rocketmq-5.1.3/bin
 
-CMD ["bash", "start.sh"]
+CMD ["bash", "/home/rocketmq/rocketmq-5.1.3/bin/start.sh"]
