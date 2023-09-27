@@ -7,6 +7,7 @@ import (
 	"github.com/qiushenglei/gin-skeleton/app/crontabs"
 	"github.com/qiushenglei/gin-skeleton/app/global/constants"
 	"github.com/qiushenglei/gin-skeleton/app/global/utils"
+	"github.com/qiushenglei/gin-skeleton/app/mq/localrocket"
 	"github.com/qiushenglei/gin-skeleton/pkg/logs"
 	routes "github.com/qiushenglei/gin-skeleton/routes/http"
 	"github.com/robfig/cron/v3"
@@ -18,7 +19,9 @@ var (
 	//命令行参数
 	RootCmd = &cobra.Command{}
 
-	// 因为这里是子命令行web，所以build之后，还需要./e_photo_goods.exe run -e .env.local -p 10011
+	// go build -gcflags '-m -l' main.go
+
+	// 因为这里是子命令行web，所以build之后，还需要./exefile run -e .env.local -p 10011\
 	ServerCmd = &cobra.Command{
 		Use:              "web",
 		Short:            "启动 web 服务",
@@ -27,12 +30,20 @@ var (
 		PersistentPreRun: HttpServerPersistentPreRun,
 	}
 
-	// 因为这里是子命令行crontab，所以build之后，还需要./e_photo_goods.exe crontab -e .env.local -p 10011
+	// 因为这里是子命令行crontab，所以build之后，还需要./exefile.exe crontab -e .env.local -p 10011
 	CrontabCmd = &cobra.Command{
 		Use:   "crontab",
 		Short: "启动 定时任务 服务",
 		Long:  "启动 定时任务 服务",
 		Run:   RunCrontab,
+	}
+
+	// 因为这里是子命令行rocketmq，所以build之后，还需要./e_photo_goods.exe crontab -e .env.local -p 10011
+	RocketMQCmd = &cobra.Command{
+		Use:   "rocketmq",
+		Short: "启动 rocketmq消费者 服务",
+		Long:  "启动 rocketmq消费者 服务",
+		Run:   RunRocketMQ,
 	}
 )
 
@@ -43,7 +54,7 @@ func CmdExecute() {
 	RootCmd.PersistentFlags().StringVarP(&configs.HttpPort, "http_port", "p", "10011", "http端口")
 	RootCmd.PersistentFlags().StringVarP(&configs.AppRunMode, "mode", "m", constants.ReleaseMode, "运行模式")
 
-	RootCmd.AddCommand(ServerCmd, CrontabCmd)
+	RootCmd.AddCommand(ServerCmd, CrontabCmd, RocketMQCmd)
 	if err := RootCmd.Execute(); err != nil {
 		return
 	}
@@ -110,6 +121,18 @@ func RunCrontab(cmd *cobra.Command, args []string) {
 		if err := c.Stop(); err != nil {
 		}
 	}
+	GracefulShutdown(closers)
+
+}
+
+func RunRocketMQ(cmd *cobra.Command, args []string) {
+	// 注册除了路由以外的所有东西
+	closers := RegistAll()
+
+	localrocket.RegisterRocketMQConsumer()
+
+	ListenSignal()
+
 	GracefulShutdown(closers)
 
 }

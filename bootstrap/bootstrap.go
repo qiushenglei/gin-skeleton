@@ -35,8 +35,11 @@ func RegistAll() (closers []func() error) {
 	}
 	closers = append(closers, dataClosers...)
 
-	// 注册 MQ
-	mq.RegisterMQ()
+	// 注册 MQ product
+	err = mq.RegisterMQ()
+	if err != nil {
+		panic("Failed to regist rocketMQ Producer: " + err.Error())
+	}
 
 	// 最后再显式地注册日志 syncers 到 closers 中。这样，日志文件最后关闭
 	closers = append(closers, syncers)
@@ -60,7 +63,7 @@ func registerConfig() (err error) {
 func ListenSignal() {
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, os.Interrupt)
-	fmt.Println("挂起协程") // graceful shutdown
+	fmt.Println("挂起服务启动协程") // graceful shutdown
 	<-quit
 	fmt.Println("\nShutdown all server ...")
 }

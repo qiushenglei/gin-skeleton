@@ -9,11 +9,12 @@ import (
 // RocketProduct rocketmq消费者
 var RocketProduct rocketmq.Producer
 
-func RegisterMQ() {
+func RegisterMQ() error {
 	isRegister := configs.EnvConfig.GetInt("REGISTER_MQ")
 	if isRegister == 0 {
-		return
+		return nil
 	}
 
-	localrocket.RegisterRocketMQProducer()
+	err := localrocket.RegisterRocketMQProducer()
+	return err
 }

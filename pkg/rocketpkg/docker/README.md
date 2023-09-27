@@ -30,9 +30,16 @@ nohup /home/rocketmq/rocketmq-5.1.3/bin/mqbroker -c /home/rocketmq/rocketmq-5.1.
 ./mqadmin updateTopic -c DefaultCluster -n 127.0.0.1:9876 -t order
 # 查看topic列表
 ./mqadmin topicList  -n 127.0.0.1:9876
-
+# 查看topic主题信息
 ./mqadmin topicStatus  -n 127.0.0.1:9876 -t order
-
+# 查看消费者组整体信息
+./mqadmin consumerProgress -n 127.0.0.1:9876 -g OrderPayGroup
+# 查看消费者组连接信息
+./mqadmin consumerConnection -n 127.0.0.1:9876 -g OrderPayGroup
+# 查看消费者组成员
+./mqadmin consumerStatus -n 127.0.0.1:9876 -g OrderPayGroup
+# 手动添加信息到topic
+./mqadmin sendMessage -n 127.0.0.1:9876 -t order -p "这里是手动添加" -c A -c B
 ```
 
 # dockerfile启动方式
