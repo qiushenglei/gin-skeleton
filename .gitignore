@@ -1,0 +1,6 @@
+.idea
+
+storage/log
+
+pkg/dbtoes/docker/mysql/data
+pkg/dbtoes/docker/canaladmin/mysqldata

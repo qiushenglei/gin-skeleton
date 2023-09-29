@@ -4,7 +4,7 @@
 docker pull apache/rocketmq
 
 # 运行容器,有哪些端口需要映射去看docker inspect IMAGE_NAME
-docker run -it --network dbtoes -d -p 9876:9876 -p 10909:10909 -p 10911:10911 -p 10912:10912 --name=rocketmq apache/rocketmq bash
+docker run -it --network dbtoes -d -p 9876:9876 -p 10909:10909 -p 10911:10911 -p 10912:10912 --name=qslrocketmq apache/rocketmq bash
 
 # 进入容器内
 docker exec -it CONTAINER_NAME bash
@@ -16,11 +16,15 @@ export
 cd /home/rocketmq/rocketmq-5.1.3/bin
 nohup /home/rocketmq/rocketmq-5.1.3/bin/mqnamesrv &
 
+# broker配置文件拷贝
+cd path/to/local_config_path
+docker cp qslrocketmq:/home/rocketmq/rocketmq-5.1.3/conf/broker.conf ./
+
 # 启动broker
 vi ../conf/broker.conf
 
-# 文件尾部追加
-namesrvAddr = 127.0.0.1:9876
+# 文件尾部追加，127.0.0.1应该是可以换成容器名，host会指定到相应的容器ip
+namesrvAddr = 127.0.0.1:9876 
 brokerIP1 = 127.0.0.1
 
 nohup /home/rocketmq/rocketmq-5.1.3/bin/mqbroker -c /home/rocketmq/rocketmq-5.1.3/conf/broker.conf &
@@ -51,6 +55,9 @@ docker build -t rocketmqdf .
 
 # 启动容器
 docker run -it -d -p 9876:9876 -p 10909:10909 -p 10911:10911 -p 10912:10912 --name=qslrocketmq rocketmqdf bash
+docker run -it -v /f/go_code/gin-skeleton/pkg/dbtoes/docker/rocketmq/broker.conf:/home/rocketmq/rocketmq-5.1.3/conf/broker.conf -v /f/go_code/gin-skeleton/pkg/dbtoes/docker/rocketmq/start.sh:/home/rocketmq/rocketmq-5.1.3/bin/start.sh  -d -p 9876:9876 -p 10909:10909 -p 10911:10911 -p 10912:10912 --name=qslrocketmq rocketmqdf bash
+
+docker run -it -v  /f/go_code/gin-skeleton/pkg/dbtoes/docker/rocketmq/broker.conf:/home/rocketmq/rocketmq-5.1.3/conf/broker.conf -d -p 9876:9876 -p 10909:10909 -p 10911:10911 -p 10912:10912 --name=qslrocketmq rocketmqdf bash
 
 # 问题，进到容器内ps 未发现启动服务，容器内去执行start.sh文件是可以启动服务的 
 # 暂时去容器执行start.sh
