@@ -4,6 +4,6 @@
 nohup /home/rocketmq/rocketmq-5.1.3/bin/mqnamesrv &
 
 # 启动broker1
-nohup /home/rocketmq/rocketmq-5.1.3/bin/mqbroker -c /home/rocketmq/rocketmq-5.1.3/conf/broker.conf &
+/home/rocketmq/rocketmq-5.1.3/bin/mqbroker -c /home/rocketmq/rocketmq-5.1.3/conf/broker.conf
 
 
