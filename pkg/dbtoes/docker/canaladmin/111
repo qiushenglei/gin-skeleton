@@ -1,0 +1,567 @@
+
+
+source /etc/profile
+export JAVA_HOME=/usr/java/latest
+export PATH=$JAVA_HOME/bin:$PATH
+touch /tmp/start.log
+chown admin: /tmp/start.log
+chown -R admin: /home/admin/canal-admin
+host=`hostname -i`
+
+MYSQL_USER_PASSWORD=`perl -le 'print $ENV{"spring.datasource.password"}'`
+MYSQL_USER=`perl -le 'print $ENV{"spring.datasource.username"}'`
+MYSQL_DATABASE=`perl -le 'print $ENV{"spring.datasource.database"}'`
+MYSQL_ADDRESS=`perl -le 'print $ENV{"spring.datasource.address"}'`
+
+if [ -z "${MYSQL_USER_PASSWORD}" ]; then
+    MYSQL_USER_PASSWORD="canal"
+fi
+if [ -z "${MYSQL_USER}" ]; then
+    MYSQL_USER="canal"
+fi
+if [ -z "${MYSQL_DATABASE}" ]; then
+    MYSQL_DATABASE="canal_manager"
+fi
+
+# waitterm
+#   wait TERM/INT signal.
+#   see: http://veithen.github.io/2014/11/16/sigterm-propagation.html
+waitterm() {
+        local PID
+        # any process to block
+        tail -f /dev/null &
+        PID="$!"
+        # setup trap, could do nothing, or just kill the blocker
+        trap "kill -TERM ${PID}" TERM INT
+        # wait for signal, ignore wait exit code
+        wait "${PID}" || true
+        # clear trap
+        trap - TERM INT
+        # wait blocker, ignore blocker exit code
+        wait "${PID}" 2>/dev/null || true
+}
+
+# waittermpid "${PIDFILE}".
+#   monitor process by pidfile && wait TERM/INT signal.
+#   if the process disappeared, return 1, means exit with ERROR.
+#   if TERM or INT signal received, return 0, means OK to exit.
+waittermpid() {
+        local PIDFILE PID do_run error
+        PIDFILE="${1?}"
+        do_run=true
+        error=0
+        trap "do_run=false" TERM INT
+        while "${do_run}" ; do
+                PID="$(cat "${PIDFILE}")"
+                if ! ps -p "${PID}" >/dev/null 2>&1 ; then
+                        do_run=false
+                        error=1
+                else
+                        sleep 1
+                fi
+        done
+        trap - TERM INT
+        return "${error}"
+}
+
+
+function checkStart() {
+    local name=$1
+    local cmd=$2
+    local timeout=$3
+    cost=5
+    while [ $timeout -gt 0 ]; do
+        ST=`eval $cmd`
+        if [ "$ST" == "0" ]; then
+            sleep 1
+            let timeout=timeout-1
+            let cost=cost+1
+        elif [ "$ST" == "" ]; then
+            sleep 1
+            let timeout=timeout-1
+            let cost=cost+1
+        else
+            break
+        fi
+    done
+    echo "start $name successful"
+}
+
+function start_mysql() {
+    echo "start mysql ..."
+    # start mysql
+    MYSQL_ROOT_PASSWORD=Hello1234
+    # connect local mysql
+    if [ -z "$(ls -A /var/lib/mysql)" ]; then
+        mysql_install_db --user=mysql --datadir=/var/lib/mysql 1>>/tmp/start.log 2>&1
+        # These statements _must_ be on individual lines, and _must_ end with
+        # semicolons (no line breaks or comments are permitted).
+        # TODO proper SQL escaping on ALL the things D:
+        TEMP_FILE='/tmp/init.sql'
+        echo "update mysql.user set password=password('${MYSQL_ROOT_PASSWORD}') where user='root';" >> $TEMP_FILE
+        echo "grant all privileges on *.* to 'root'@'%' WITH GRANT OPTION ;" >> $TEMP_FILE
+        echo "create database if not exists $MYSQL_DATABASE ;" >> $TEMP_FILE
+        echo "create user $MYSQL_USER identified by '$MYSQL_USER_PASSWORD' ;" >> $TEMP_FILE
+        echo "grant all privileges on $MYSQL_DATABASE.* to '$MYSQL_USER'@'%' identified by '$MYSQL_USER_PASSWORD' ;" >> $TEMP_FILE
+        echo "grant all privileges on $MYSQL_DATABASE.* to '$MYSQL_USER'@'localhost' identified by '$MYSQL_USER_PASSWORD' ;" >> $TEMP_FILE
+        echo "flush privileges;" >> $TEMP_FILE
+        service mysqld start
+        checkStart "mysql" "echo 'show status' | mysql -s -h127.0.0.1 -P3306 -uroot | grep -c Uptime" 30
+        mysql -h127.0.0.1 -uroot -e "source $TEMP_FILE" 1>>/tmp/start.log 2>&1
+
+        cmd="mysql -h127.0.0.1 -u$MYSQL_USER -p$MYSQL_USER_PASSWORD $MYSQL_DATABASE -e 'source /home/admin/canal-admin/conf/canal_manager.sql' 1>>/tmp/start.log 2>&1"
+        eval $cmd
+        /bin/rm -f /home/admin/canal-admin/conf/canal_manager.sql
+    else
+        chown -R mysql:mysql /var/lib/mysql
+        service mysqld start
+        #check start
+        checkStart "mysql" "echo 'show status' | mysql -b -s  -h127.0.0.1 -P3306 -uroot -p$MYSQL_ROOT_PASSWORD | grep -c Uptime" 30
+    fi
+}
+
+
+
+
+
+
+
+
+
+
+
+
+function stop_mysql() {
+    echo "stop mysql ..."
+    # stop mysql
+    service mysqld stop
+    echo "stop mysql successful ..."
+}
+
+function start_admin() {
+    echo "start admin ..."
+    serverPort=`perl -le 'print $ENV{"server.port"}'`
+    if [ -z "$serverPort" ] ; then
+        serverPort=8089
+    fi
+    su admin -c 'cd /home/admin/canal-admin/bin/ && sh restart.sh 1>>/tmp/start.log 2>&1'
+    sleep 5
+    #check start
+    checkStart "canal" "nc 127.0.0.1 $serverPort -w 1 -z | wc -l" 30
+}
+
+function stop_admin() {
+    echo "stop admin"
+    su admin -c 'cd /home/admin/canal-admin/bin/ && sh stop.sh 1>>/tmp/start.log 2>&1'
+    echo "stop admin successful ..."
+}
+
+echo "==> START ..."
+
+if [ -z "${MYSQL_ADDRESS}" ]; then
+    start_mysql
+fi
+start_admin
+
+echo "==> START SUCCESSFUL ..."
+
+tail -f /dev/null &
+# wait TERM signal
+waitterm
+
+echo "==> STOP"
+
+if [ -z "${MYSQL_ADDRESS}" ]; then
+    stop_admin
+fi
+stop_mysql
+
+echo "==> STOP SUCCESSFUL ..."
+sh-4.1#
+
+
+
+
+
+sh-4.1# cd canal-admin/logs/
+sh-4.1# ls
+admin.log
+sh-4.1# vi admin.log ^C
+sh-4.1# cat admin.log
+2023-09-30 00:44:50.369 [main] INFO  com.alibaba.otter.canal.admin.CanalAdminApplication - Starting CanalAdminApplication on 0f39e2f431ed with PID 325 (/home/admin/canal-admin/lib/canal-admin-server-1.1.4.jar started by admin in /home/admin/canal-admin/bin)
+2023-09-30 00:44:50.395 [main] INFO  com.alibaba.otter.canal.admin.CanalAdminApplication - No active profile set, falling back to default profiles: default
+2023-09-30 00:44:50.440 [main] INFO  o.s.b.w.s.c.AnnotationConfigServletWebServerApplicationContext - Refreshing org.springframework.boot.web.servlet.context.AnnotationConfigServletWebServerApplicationContext@6f03482: startup date [Sat Sep 30 00:44:50 CST 2023]; root of context hierarchy
+2023-09-30 00:44:51.528 [main] INFO  o.s.boot.web.embedded.tomcat.TomcatWebServer - Tomcat initialized with port(s): 8089 (http)
+2023-09-30 00:44:51.548 [main] INFO  org.apache.coyote.http11.Http11NioProtocol - Initializing ProtocolHandler ["http-nio-8089"]
+2023-09-30 00:44:51.558 [main] INFO  org.apache.catalina.core.StandardService - Starting service [Tomcat]
+2023-09-30 00:44:51.558 [main] INFO  org.apache.catalina.core.StandardEngine - Starting Servlet Engine: Apache Tomcat/8.5.29
+2023-09-30 00:44:51.566 [localhost-startStop-1] INFO  org.apache.catalina.core.AprLifecycleListener - The APR based Apache Tomcat Native library which allows optimal performance in production environments was not found on the java.library.path: [/usr/java/packages/lib/amd64:/usr/lib64:/lib64:/lib:/usr/lib]
+2023-09-30 00:44:51.637 [localhost-startStop-1] INFO  o.a.catalina.core.ContainerBase.[Tomcat].[localhost].[/] - Initializing Spring embedded WebApplicationContext
+2023-09-30 00:44:51.638 [localhost-startStop-1] INFO  org.springframework.web.context.ContextLoader - Root WebApplicationContext: initialization completed in 1198 ms
+2023-09-30 00:44:51.734 [localhost-startStop-1] INFO  o.s.boot.web.servlet.ServletRegistrationBean - Servlet dispatcherServlet mapped to [/]
+2023-09-30 00:44:51.738 [localhost-startStop-1] INFO  o.s.boot.web.servlet.FilterRegistrationBean - Mapping filter: 'characterEncodingFilter' to: [/*]
+2023-09-30 00:44:51.738 [localhost-startStop-1] INFO  o.s.boot.web.servlet.FilterRegistrationBean - Mapping filter: 'hiddenHttpMethodFilter' to: [/*]
+2023-09-30 00:44:51.738 [localhost-startStop-1] INFO  o.s.boot.web.servlet.FilterRegistrationBean - Mapping filter: 'httpPutFormContentFilter' to: [/*]
+2023-09-30 00:44:51.739 [localhost-startStop-1] INFO  o.s.boot.web.servlet.FilterRegistrationBean - Mapping filter: 'requestContextFilter' to: [/*]
+2023-09-30 00:44:51.927 [main] INFO  io.ebean.EbeanVersion - ebean version: 11.41.1
+2023-09-30 00:44:51.936 [main] INFO  io.ebean.config.properties.LoadContext - loaded properties from [application.yml]
+2023-09-30 00:44:51.956 [main] INFO  com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Starting...
+2023-09-30 00:44:53.096 [main] ERROR com.zaxxer.hikari.pool.HikariPool - HikariPool-1 - Exception during pool initialization.
+com.mysql.jdbc.exceptions.jdbc4.CommunicationsException: Communications link failure
+
+The last packet sent successfully to the server was 0 milliseconds ago. The driver has not received any packets from the server.
+at sun.reflect.NativeConstructorAccessorImpl.newInstance0(Native Method)
+at sun.reflect.NativeConstructorAccessorImpl.newInstance(NativeConstructorAccessorImpl.java:62)
+at sun.reflect.DelegatingConstructorAccessorImpl.newInstance(DelegatingConstructorAccessorImpl.java:45)
+at java.lang.reflect.Constructor.newInstance(Constructor.java:423)
+at com.mysql.jdbc.Util.handleNewInstance(Util.java:425)
+at com.mysql.jdbc.SQLError.createCommunicationsException(SQLError.java:989)
+at com.mysql.jdbc.MysqlIO.<init>(MysqlIO.java:341)
+at com.mysql.jdbc.ConnectionImpl.coreConnect(ConnectionImpl.java:2251)
+at com.mysql.jdbc.ConnectionImpl.connectOneTryOnly(ConnectionImpl.java:2284)
+at com.mysql.jdbc.ConnectionImpl.createNewIO(ConnectionImpl.java:2083)
+at com.mysql.jdbc.ConnectionImpl.<init>(ConnectionImpl.java:806)
+at com.mysql.jdbc.JDBC4Connection.<init>(JDBC4Connection.java:47)
+at sun.reflect.NativeConstructorAccessorImpl.newInstance0(Native Method)
+at sun.reflect.NativeConstructorAccessorImpl.newInstance(NativeConstructorAccessorImpl.java:62)
+at sun.reflect.DelegatingConstructorAccessorImpl.newInstance(DelegatingConstructorAccessorImpl.java:45)
+at java.lang.reflect.Constructor.newInstance(Constructor.java:423)
+at com.mysql.jdbc.Util.handleNewInstance(Util.java:425)
+at com.mysql.jdbc.ConnectionImpl.getInstance(ConnectionImpl.java:410)
+at com.mysql.jdbc.NonRegisteringDriver.connect(NonRegisteringDriver.java:328)
+at com.zaxxer.hikari.util.DriverDataSource.getConnection(DriverDataSource.java:117)
+at com.zaxxer.hikari.util.DriverDataSource.getConnection(DriverDataSource.java:123)
+at com.zaxxer.hikari.pool.PoolBase.newConnection(PoolBase.java:365)
+at com.zaxxer.hikari.pool.PoolBase.newPoolEntry(PoolBase.java:194)
+at com.zaxxer.hikari.pool.HikariPool.createPoolEntry(HikariPool.java:460)
+at com.zaxxer.hikari.pool.HikariPool.checkFailFast(HikariPool.java:534)
+at com.zaxxer.hikari.pool.HikariPool.<init>(HikariPool.java:115)
+at com.zaxxer.hikari.HikariDataSource.getConnection(HikariDataSource.java:112)
+at io.ebeaninternal.server.core.DefaultContainer.checkDataSource(DefaultContainer.java:316)
+at io.ebeaninternal.server.core.DefaultContainer.createServer(DefaultContainer.java:106)
+at io.ebeaninternal.server.core.DefaultContainer.createServer(DefaultContainer.java:35)
+at io.ebean.EbeanServerFactory.createInternal(EbeanServerFactory.java:109)
+at io.ebean.EbeanServerFactory.create(EbeanServerFactory.java:70)
+at com.alibaba.otter.canal.admin.config.EbeanConfig.ebeanServer(EbeanConfig.java:38)
+at com.alibaba.otter.canal.admin.config.EbeanConfig$$EnhancerBySpringCGLIB$$c4c51f4e.CGLIB$ebeanServer$0(<generated>)
+at com.alibaba.otter.canal.admin.config.EbeanConfig$$EnhancerBySpringCGLIB$$c4c51f4e$$FastClassBySpringCGLIB$$4c1f41b4.invoke(<generated>)
+at org.springframework.cglib.proxy.MethodProxy.invokeSuper(MethodProxy.java:228)
+at org.springframework.context.annotation.ConfigurationClassEnhancer$BeanMethodInterceptor.intercept(ConfigurationClassEnhancer.java:361)
+at com.alibaba.otter.canal.admin.config.EbeanConfig$$EnhancerBySpringCGLIB$$c4c51f4e.ebeanServer(<generated>)
+at sun.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
+at sun.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)
+at sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)
+at java.lang.reflect.Method.invoke(Method.java:498)
+at org.springframework.beans.factory.support.SimpleInstantiationStrategy.instantiate(SimpleInstantiationStrategy.java:154)
+at org.springframework.beans.factory.support.ConstructorResolver.instantiateUsingFactoryMethod(ConstructorResolver.java:579)
+at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.instantiateUsingFactoryMethod(AbstractAutowireCapableBeanFactory.java:1250)
+at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.createBeanInstance(AbstractAutowireCapableBeanFactory.java:1099)
+at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.doCreateBean(AbstractAutowireCapableBeanFactory.java:541)
+at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.createBean(AbstractAutowireCapableBeanFactory.java:501)
+at org.springframework.beans.factory.support.AbstractBeanFactory.lambda$doGetBean$0(AbstractBeanFactory.java:317)
+at org.springframework.beans.factory.support.DefaultSingletonBeanRegistry.getSingleton(DefaultSingletonBeanRegistry.java:228)
+at org.springframework.beans.factory.support.AbstractBeanFactory.doGetBean(AbstractBeanFactory.java:315)
+at org.springframework.beans.factory.support.AbstractBeanFactory.getBean(AbstractBeanFactory.java:199)
+at org.springframework.beans.factory.support.DefaultListableBeanFactory.preInstantiateSingletons(DefaultListableBeanFactory.java:760)
+at org.springframework.context.support.AbstractApplicationContext.finishBeanFactoryInitialization(AbstractApplicationContext.java:869)
+at org.springframework.context.support.AbstractApplicationContext.refresh(AbstractApplicationContext.java:550)
+at org.springframework.boot.web.servlet.context.ServletWebServerApplicationContext.refresh(ServletWebServerApplicationContext.java:140)
+at org.springframework.boot.SpringApplication.refresh(SpringApplication.java:759)
+at org.springframework.boot.SpringApplication.refreshContext(SpringApplication.java:395)
+at org.springframework.boot.SpringApplication.run(SpringApplication.java:327)
+at com.alibaba.otter.canal.admin.CanalAdminApplication.main(CanalAdminApplication.java:19)
+Caused by: java.net.ConnectException: Connection refused (Connection refused)
+at java.net.PlainSocketImpl.socketConnect(Native Method)
+at java.net.AbstractPlainSocketImpl.doConnect(AbstractPlainSocketImpl.java:350)
+at java.net.AbstractPlainSocketImpl.connectToAddress(AbstractPlainSocketImpl.java:206)
+at java.net.AbstractPlainSocketImpl.connect(AbstractPlainSocketImpl.java:188)
+at java.net.SocksSocketImpl.connect(SocksSocketImpl.java:392)
+at java.net.Socket.connect(Socket.java:589)
+at com.mysql.jdbc.StandardSocketFactory.connect(StandardSocketFactory.java:211)
+at com.mysql.jdbc.MysqlIO.<init>(MysqlIO.java:300)
+... 53 common frames omitted
+2023-09-30 00:44:53.098 [main] WARN  o.s.b.w.s.c.AnnotationConfigServletWebServerApplicationContext - Exception encountered during context initialization - cancelling refresh attempt: org.springframework.beans.factory.BeanCreationException: Error creating bean with name 'ebeanServer' defined in class path resource [com/alibaba/otter/canal/admin/config/EbeanConfig.class]: Bean instantiation via factory method failed; nested exception is org.springframework.beans.BeanInstantiationException: Failed to instantiate [io.ebean.EbeanServer]: Factory method 'ebeanServer' threw exception; nested exception is javax.persistence.PersistenceException: com.mysql.jdbc.exceptions.jdbc4.CommunicationsException: Communications link failure
+
+The last packet sent successfully to the server was 0 milliseconds ago. The driver has not received any packets from the server.
+2023-09-30 00:44:53.101 [main] INFO  org.apache.catalina.core.StandardService - Stopping service [Tomcat]
+2023-09-30 00:44:53.114 [main] INFO  o.s.b.a.logging.ConditionEvaluationReportLoggingListener -
+
+Error starting ApplicationContext. To display the conditions report re-run your application with 'debug' enabled.
+2023-09-30 00:44:53.116 [main] ERROR org.springframework.boot.SpringApplication - Application run failed
+org.springframework.beans.factory.BeanCreationException: Error creating bean with name 'ebeanServer' defined in class path resource [com/alibaba/otter/canal/admin/config/EbeanConfig.class]: Bean instantiation via factory method failed; nested exception is org.springframework.beans.BeanInstantiationException: Failed to instantiate [io.ebean.EbeanServer]: Factory method 'ebeanServer' threw exception; nested exception is javax.persistence.PersistenceException: com.mysql.jdbc.exceptions.jdbc4.CommunicationsException: Communications link failure
+
+The last packet sent successfully to the server was 0 milliseconds ago. The driver has not received any packets from the server.
+at org.springframework.beans.factory.support.ConstructorResolver.instantiateUsingFactoryMethod(ConstructorResolver.java:587)
+at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.instantiateUsingFactoryMethod(AbstractAutowireCapableBeanFactory.java:1250)
+at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.createBeanInstance(AbstractAutowireCapableBeanFactory.java:1099)
+at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.doCreateBean(AbstractAutowireCapableBeanFactory.java:541)
+at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.createBean(AbstractAutowireCapableBeanFactory.java:501)
+at org.springframework.beans.factory.support.AbstractBeanFactory.lambda$doGetBean$0(AbstractBeanFactory.java:317)
+at org.springframework.beans.factory.support.DefaultSingletonBeanRegistry.getSingleton(DefaultSingletonBeanRegistry.java:228)
+at org.springframework.beans.factory.support.AbstractBeanFactory.doGetBean(AbstractBeanFactory.java:315)
+at org.springframework.beans.factory.support.AbstractBeanFactory.getBean(AbstractBeanFactory.java:199)
+at org.springframework.beans.factory.support.DefaultListableBeanFactory.preInstantiateSingletons(DefaultListableBeanFactory.java:760)
+at org.springframework.context.support.AbstractApplicationContext.finishBeanFactoryInitialization(AbstractApplicationContext.java:869)
+at org.springframework.context.support.AbstractApplicationContext.refresh(AbstractApplicationContext.java:550)
+at org.springframework.boot.web.servlet.context.ServletWebServerApplicationContext.refresh(ServletWebServerApplicationContext.java:140)
+at org.springframework.boot.SpringApplication.refresh(SpringApplication.java:759)
+at org.springframework.boot.SpringApplication.refreshContext(SpringApplication.java:395)
+at org.springframework.boot.SpringApplication.run(SpringApplication.java:327)
+at com.alibaba.otter.canal.admin.CanalAdminApplication.main(CanalAdminApplication.java:19)
+Caused by: org.springframework.beans.BeanInstantiationException: Failed to instantiate [io.ebean.EbeanServer]: Factory method 'ebeanServer' threw exception; nested exception is javax.persistence.PersistenceException: com.mysql.jdbc.exceptions.jdbc4.CommunicationsException: Communications link failure
+
+The last packet sent successfully to the server was 0 milliseconds ago. The driver has not received any packets from the server.
+at org.springframework.beans.factory.support.SimpleInstantiationStrategy.instantiate(SimpleInstantiationStrategy.java:185)
+at org.springframework.beans.factory.support.ConstructorResolver.instantiateUsingFactoryMethod(ConstructorResolver.java:579)
+... 16 common frames omitted
+Caused by: javax.persistence.PersistenceException: com.mysql.jdbc.exceptions.jdbc4.CommunicationsException: Communications link failure
+
+The last packet sent successfully to the server was 0 milliseconds ago. The driver has not received any packets from the server.
+at io.ebeaninternal.server.core.DefaultContainer.checkDataSource(DefaultContainer.java:323)
+at io.ebeaninternal.server.core.DefaultContainer.createServer(DefaultContainer.java:106)
+at io.ebeaninternal.server.core.DefaultContainer.createServer(DefaultContainer.java:35)
+at io.ebean.EbeanServerFactory.createInternal(EbeanServerFactory.java:109)
+at io.ebean.EbeanServerFactory.create(EbeanServerFactory.java:70)
+at com.alibaba.otter.canal.admin.config.EbeanConfig.ebeanServer(EbeanConfig.java:38)
+at com.alibaba.otter.canal.admin.config.EbeanConfig$$EnhancerBySpringCGLIB$$c4c51f4e.CGLIB$ebeanServer$0(<generated>)
+at com.alibaba.otter.canal.admin.config.EbeanConfig$$EnhancerBySpringCGLIB$$c4c51f4e$$FastClassBySpringCGLIB$$4c1f41b4.invoke(<generated>)
+at org.springframework.cglib.proxy.MethodProxy.invokeSuper(MethodProxy.java:228)
+at org.springframework.context.annotation.ConfigurationClassEnhancer$BeanMethodInterceptor.intercept(ConfigurationClassEnhancer.java:361)
+at com.alibaba.otter.canal.admin.config.EbeanConfig$$EnhancerBySpringCGLIB$$c4c51f4e.ebeanServer(<generated>)
+at sun.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
+at sun.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)
+at sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)
+at java.lang.reflect.Method.invoke(Method.java:498)
+at org.springframework.beans.factory.support.SimpleInstantiationStrategy.instantiate(SimpleInstantiationStrategy.java:154)
+... 17 common frames omitted
+Caused by: com.mysql.jdbc.exceptions.jdbc4.CommunicationsException: Communications link failure
+
+The last packet sent successfully to the server was 0 milliseconds ago. The driver has not received any packets from the server.
+at sun.reflect.NativeConstructorAccessorImpl.newInstance0(Native Method)
+at sun.reflect.NativeConstructorAccessorImpl.newInstance(NativeConstructorAccessorImpl.java:62)
+at sun.reflect.DelegatingConstructorAccessorImpl.newInstance(DelegatingConstructorAccessorImpl.java:45)
+at java.lang.reflect.Constructor.newInstance(Constructor.java:423)
+at com.mysql.jdbc.Util.handleNewInstance(Util.java:425)
+at com.mysql.jdbc.SQLError.createCommunicationsException(SQLError.java:989)
+at com.mysql.jdbc.MysqlIO.<init>(MysqlIO.java:341)
+at com.mysql.jdbc.ConnectionImpl.coreConnect(ConnectionImpl.java:2251)
+at com.mysql.jdbc.ConnectionImpl.connectOneTryOnly(ConnectionImpl.java:2284)
+at com.mysql.jdbc.ConnectionImpl.createNewIO(ConnectionImpl.java:2083)
+at com.mysql.jdbc.ConnectionImpl.<init>(ConnectionImpl.java:806)
+at com.mysql.jdbc.JDBC4Connection.<init>(JDBC4Connection.java:47)
+at sun.reflect.NativeConstructorAccessorImpl.newInstance0(Native Method)
+at sun.reflect.NativeConstructorAccessorImpl.newInstance(NativeConstructorAccessorImpl.java:62)
+at sun.reflect.DelegatingConstructorAccessorImpl.newInstance(DelegatingConstructorAccessorImpl.java:45)
+at java.lang.reflect.Constructor.newInstance(Constructor.java:423)
+at com.mysql.jdbc.Util.handleNewInstance(Util.java:425)
+at com.mysql.jdbc.ConnectionImpl.getInstance(ConnectionImpl.java:410)
+at com.mysql.jdbc.NonRegisteringDriver.connect(NonRegisteringDriver.java:328)
+at com.zaxxer.hikari.util.DriverDataSource.getConnection(DriverDataSource.java:117)
+at com.zaxxer.hikari.util.DriverDataSource.getConnection(DriverDataSource.java:123)
+at com.zaxxer.hikari.pool.PoolBase.newConnection(PoolBase.java:365)
+at com.zaxxer.hikari.pool.PoolBase.newPoolEntry(PoolBase.java:194)
+at com.zaxxer.hikari.pool.HikariPool.createPoolEntry(HikariPool.java:460)
+at com.zaxxer.hikari.pool.HikariPool.checkFailFast(HikariPool.java:534)
+at com.zaxxer.hikari.pool.HikariPool.<init>(HikariPool.java:115)
+at com.zaxxer.hikari.HikariDataSource.getConnection(HikariDataSource.java:112)
+at io.ebeaninternal.server.core.DefaultContainer.checkDataSource(DefaultContainer.java:316)
+... 32 common frames omitted
+Caused by: java.net.ConnectException: Connection refused (Connection refused)
+at java.net.PlainSocketImpl.socketConnect(Native Method)
+at java.net.AbstractPlainSocketImpl.doConnect(AbstractPlainSocketImpl.java:350)
+at java.net.AbstractPlainSocketImpl.connectToAddress(AbstractPlainSocketImpl.java:206)
+at java.net.AbstractPlainSocketImpl.connect(AbstractPlainSocketImpl.java:188)
+at java.net.SocksSocketImpl.connect(SocksSocketImpl.java:392)
+at java.net.Socket.connect(Socket.java:589)
+at com.mysql.jdbc.StandardSocketFactory.connect(StandardSocketFactory.java:211)
+at com.mysql.jdbc.MysqlIO.<init>(MysqlIO.java:300)
+... 53 common frames omitted
+2023-09-30 00:45:32.621 [main] INFO  com.alibaba.otter.canal.admin.CanalAdminApplication - Starting CanalAdminApplication on 0f39e2f431ed with PID 277 (/home/admin/canal-admin/lib/canal-admin-server-1.1.4.jar started by admin in /home/admin/canal-admin/bin)
+2023-09-30 00:45:32.646 [main] INFO  com.alibaba.otter.canal.admin.CanalAdminApplication - No active profile set, falling back to default profiles: default
+2023-09-30 00:45:32.688 [main] INFO  o.s.b.w.s.c.AnnotationConfigServletWebServerApplicationContext - Refreshing org.springframework.boot.web.servlet.context.AnnotationConfigServletWebServerApplicationContext@6f03482: startup date [Sat Sep 30 00:45:32 CST 2023]; root of context hierarchy
+2023-09-30 00:45:33.807 [main] INFO  o.s.boot.web.embedded.tomcat.TomcatWebServer - Tomcat initialized with port(s): 8089 (http)
+2023-09-30 00:45:33.826 [main] INFO  org.apache.coyote.http11.Http11NioProtocol - Initializing ProtocolHandler ["http-nio-8089"]
+2023-09-30 00:45:33.837 [main] INFO  org.apache.catalina.core.StandardService - Starting service [Tomcat]
+2023-09-30 00:45:33.842 [main] INFO  org.apache.catalina.core.StandardEngine - Starting Servlet Engine: Apache Tomcat/8.5.29
+2023-09-30 00:45:33.851 [localhost-startStop-1] INFO  org.apache.catalina.core.AprLifecycleListener - The APR based Apache Tomcat Native library which allows optimal performance in production environments was not found on the java.library.path: [/usr/java/packages/lib/amd64:/usr/lib64:/lib64:/lib:/usr/lib]
+2023-09-30 00:45:33.920 [localhost-startStop-1] INFO  o.a.catalina.core.ContainerBase.[Tomcat].[localhost].[/] - Initializing Spring embedded WebApplicationContext
+2023-09-30 00:45:33.921 [localhost-startStop-1] INFO  org.springframework.web.context.ContextLoader - Root WebApplicationContext: initialization completed in 1233 ms
+2023-09-30 00:45:34.015 [localhost-startStop-1] INFO  o.s.boot.web.servlet.ServletRegistrationBean - Servlet dispatcherServlet mapped to [/]
+2023-09-30 00:45:34.018 [localhost-startStop-1] INFO  o.s.boot.web.servlet.FilterRegistrationBean - Mapping filter: 'characterEncodingFilter' to: [/*]
+2023-09-30 00:45:34.019 [localhost-startStop-1] INFO  o.s.boot.web.servlet.FilterRegistrationBean - Mapping filter: 'hiddenHttpMethodFilter' to: [/*]
+2023-09-30 00:45:34.019 [localhost-startStop-1] INFO  o.s.boot.web.servlet.FilterRegistrationBean - Mapping filter: 'httpPutFormContentFilter' to: [/*]
+2023-09-30 00:45:34.019 [localhost-startStop-1] INFO  o.s.boot.web.servlet.FilterRegistrationBean - Mapping filter: 'requestContextFilter' to: [/*]
+2023-09-30 00:45:34.193 [main] INFO  io.ebean.EbeanVersion - ebean version: 11.41.1
+2023-09-30 00:45:34.202 [main] INFO  io.ebean.config.properties.LoadContext - loaded properties from [application.yml]
+2023-09-30 00:45:34.223 [main] INFO  com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Starting...
+2023-09-30 00:45:35.369 [main] ERROR com.zaxxer.hikari.pool.HikariPool - HikariPool-1 - Exception during pool initialization.
+com.mysql.jdbc.exceptions.jdbc4.CommunicationsException: Communications link failure
+
+The last packet sent successfully to the server was 0 milliseconds ago. The driver has not received any packets from the server.
+at sun.reflect.NativeConstructorAccessorImpl.newInstance0(Native Method)
+at sun.reflect.NativeConstructorAccessorImpl.newInstance(NativeConstructorAccessorImpl.java:62)
+at sun.reflect.DelegatingConstructorAccessorImpl.newInstance(DelegatingConstructorAccessorImpl.java:45)
+at java.lang.reflect.Constructor.newInstance(Constructor.java:423)
+at com.mysql.jdbc.Util.handleNewInstance(Util.java:425)
+at com.mysql.jdbc.SQLError.createCommunicationsException(SQLError.java:989)
+at com.mysql.jdbc.MysqlIO.<init>(MysqlIO.java:341)
+at com.mysql.jdbc.ConnectionImpl.coreConnect(ConnectionImpl.java:2251)
+at com.mysql.jdbc.ConnectionImpl.connectOneTryOnly(ConnectionImpl.java:2284)
+at com.mysql.jdbc.ConnectionImpl.createNewIO(ConnectionImpl.java:2083)
+at com.mysql.jdbc.ConnectionImpl.<init>(ConnectionImpl.java:806)
+at com.mysql.jdbc.JDBC4Connection.<init>(JDBC4Connection.java:47)
+at sun.reflect.NativeConstructorAccessorImpl.newInstance0(Native Method)
+at sun.reflect.NativeConstructorAccessorImpl.newInstance(NativeConstructorAccessorImpl.java:62)
+at sun.reflect.DelegatingConstructorAccessorImpl.newInstance(DelegatingConstructorAccessorImpl.java:45)
+at java.lang.reflect.Constructor.newInstance(Constructor.java:423)
+at com.mysql.jdbc.Util.handleNewInstance(Util.java:425)
+at com.mysql.jdbc.ConnectionImpl.getInstance(ConnectionImpl.java:410)
+at com.mysql.jdbc.NonRegisteringDriver.connect(NonRegisteringDriver.java:328)
+at com.zaxxer.hikari.util.DriverDataSource.getConnection(DriverDataSource.java:117)
+at com.zaxxer.hikari.util.DriverDataSource.getConnection(DriverDataSource.java:123)
+at com.zaxxer.hikari.pool.PoolBase.newConnection(PoolBase.java:365)
+at com.zaxxer.hikari.pool.PoolBase.newPoolEntry(PoolBase.java:194)
+at com.zaxxer.hikari.pool.HikariPool.createPoolEntry(HikariPool.java:460)
+at com.zaxxer.hikari.pool.HikariPool.checkFailFast(HikariPool.java:534)
+at com.zaxxer.hikari.pool.HikariPool.<init>(HikariPool.java:115)
+at com.zaxxer.hikari.HikariDataSource.getConnection(HikariDataSource.java:112)
+at io.ebeaninternal.server.core.DefaultContainer.checkDataSource(DefaultContainer.java:316)
+at io.ebeaninternal.server.core.DefaultContainer.createServer(DefaultContainer.java:106)
+at io.ebeaninternal.server.core.DefaultContainer.createServer(DefaultContainer.java:35)
+at io.ebean.EbeanServerFactory.createInternal(EbeanServerFactory.java:109)
+at io.ebean.EbeanServerFactory.create(EbeanServerFactory.java:70)
+at com.alibaba.otter.canal.admin.config.EbeanConfig.ebeanServer(EbeanConfig.java:38)
+at com.alibaba.otter.canal.admin.config.EbeanConfig$$EnhancerBySpringCGLIB$$fb20d385.CGLIB$ebeanServer$0(<generated>)
+at com.alibaba.otter.canal.admin.config.EbeanConfig$$EnhancerBySpringCGLIB$$fb20d385$$FastClassBySpringCGLIB$$b153f1d1.invoke(<generated>)
+at org.springframework.cglib.proxy.MethodProxy.invokeSuper(MethodProxy.java:228)
+at org.springframework.context.annotation.ConfigurationClassEnhancer$BeanMethodInterceptor.intercept(ConfigurationClassEnhancer.java:361)
+at com.alibaba.otter.canal.admin.config.EbeanConfig$$EnhancerBySpringCGLIB$$fb20d385.ebeanServer(<generated>)
+at sun.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
+at sun.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)
+at sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)
+at java.lang.reflect.Method.invoke(Method.java:498)
+at org.springframework.beans.factory.support.SimpleInstantiationStrategy.instantiate(SimpleInstantiationStrategy.java:154)
+at org.springframework.beans.factory.support.ConstructorResolver.instantiateUsingFactoryMethod(ConstructorResolver.java:579)
+at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.instantiateUsingFactoryMethod(AbstractAutowireCapableBeanFactory.java:1250)
+at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.createBeanInstance(AbstractAutowireCapableBeanFactory.java:1099)
+at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.doCreateBean(AbstractAutowireCapableBeanFactory.java:541)
+at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.createBean(AbstractAutowireCapableBeanFactory.java:501)
+at org.springframework.beans.factory.support.AbstractBeanFactory.lambda$doGetBean$0(AbstractBeanFactory.java:317)
+at org.springframework.beans.factory.support.DefaultSingletonBeanRegistry.getSingleton(DefaultSingletonBeanRegistry.java:228)
+at org.springframework.beans.factory.support.AbstractBeanFactory.doGetBean(AbstractBeanFactory.java:315)
+at org.springframework.beans.factory.support.AbstractBeanFactory.getBean(AbstractBeanFactory.java:199)
+at org.springframework.beans.factory.support.DefaultListableBeanFactory.preInstantiateSingletons(DefaultListableBeanFactory.java:760)
+at org.springframework.context.support.AbstractApplicationContext.finishBeanFactoryInitialization(AbstractApplicationContext.java:869)
+at org.springframework.context.support.AbstractApplicationContext.refresh(AbstractApplicationContext.java:550)
+at org.springframework.boot.web.servlet.context.ServletWebServerApplicationContext.refresh(ServletWebServerApplicationContext.java:140)
+at org.springframework.boot.SpringApplication.refresh(SpringApplication.java:759)
+at org.springframework.boot.SpringApplication.refreshContext(SpringApplication.java:395)
+at org.springframework.boot.SpringApplication.run(SpringApplication.java:327)
+at com.alibaba.otter.canal.admin.CanalAdminApplication.main(CanalAdminApplication.java:19)
+Caused by: java.net.ConnectException: Connection refused (Connection refused)
+at java.net.PlainSocketImpl.socketConnect(Native Method)
+at java.net.AbstractPlainSocketImpl.doConnect(AbstractPlainSocketImpl.java:350)
+at java.net.AbstractPlainSocketImpl.connectToAddress(AbstractPlainSocketImpl.java:206)
+at java.net.AbstractPlainSocketImpl.connect(AbstractPlainSocketImpl.java:188)
+at java.net.SocksSocketImpl.connect(SocksSocketImpl.java:392)
+at java.net.Socket.connect(Socket.java:589)
+at com.mysql.jdbc.StandardSocketFactory.connect(StandardSocketFactory.java:211)
+at com.mysql.jdbc.MysqlIO.<init>(MysqlIO.java:300)
+... 53 common frames omitted
+2023-09-30 00:45:35.371 [main] WARN  o.s.b.w.s.c.AnnotationConfigServletWebServerApplicationContext - Exception encountered during context initialization - cancelling refresh attempt: org.springframework.beans.factory.BeanCreationException: Error creating bean with name 'ebeanServer' defined in class path resource [com/alibaba/otter/canal/admin/config/EbeanConfig.class]: Bean instantiation via factory method failed; nested exception is org.springframework.beans.BeanInstantiationException: Failed to instantiate [io.ebean.EbeanServer]: Factory method 'ebeanServer' threw exception; nested exception is javax.persistence.PersistenceException: com.mysql.jdbc.exceptions.jdbc4.CommunicationsException: Communications link failure
+
+The last packet sent successfully to the server was 0 milliseconds ago. The driver has not received any packets from the server.
+2023-09-30 00:45:35.374 [main] INFO  org.apache.catalina.core.StandardService - Stopping service [Tomcat]
+2023-09-30 00:45:35.385 [main] INFO  o.s.b.a.logging.ConditionEvaluationReportLoggingListener -
+
+Error starting ApplicationContext. To display the conditions report re-run your application with 'debug' enabled.
+2023-09-30 00:45:35.387 [main] ERROR org.springframework.boot.SpringApplication - Application run failed
+org.springframework.beans.factory.BeanCreationException: Error creating bean with name 'ebeanServer' defined in class path resource [com/alibaba/otter/canal/admin/config/EbeanConfig.class]: Bean instantiation via factory method failed; nested exception is org.springframework.beans.BeanInstantiationException: Failed to instantiate [io.ebean.EbeanServer]: Factory method 'ebeanServer' threw exception; nested exception is javax.persistence.PersistenceException: com.mysql.jdbc.exceptions.jdbc4.CommunicationsException: Communications link failure
+
+The last packet sent successfully to the server was 0 milliseconds ago. The driver has not received any packets from the server.
+at org.springframework.beans.factory.support.ConstructorResolver.instantiateUsingFactoryMethod(ConstructorResolver.java:587)
+at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.instantiateUsingFactoryMethod(AbstractAutowireCapableBeanFactory.java:1250)
+at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.createBeanInstance(AbstractAutowireCapableBeanFactory.java:1099)
+at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.doCreateBean(AbstractAutowireCapableBeanFactory.java:541)
+at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.createBean(AbstractAutowireCapableBeanFactory.java:501)
+at org.springframework.beans.factory.support.AbstractBeanFactory.lambda$doGetBean$0(AbstractBeanFactory.java:317)
+at org.springframework.beans.factory.support.DefaultSingletonBeanRegistry.getSingleton(DefaultSingletonBeanRegistry.java:228)
+at org.springframework.beans.factory.support.AbstractBeanFactory.doGetBean(AbstractBeanFactory.java:315)
+at org.springframework.beans.factory.support.AbstractBeanFactory.getBean(AbstractBeanFactory.java:199)
+at org.springframework.beans.factory.support.DefaultListableBeanFactory.preInstantiateSingletons(DefaultListableBeanFactory.java:760)
+at org.springframework.context.support.AbstractApplicationContext.finishBeanFactoryInitialization(AbstractApplicationContext.java:869)
+at org.springframework.context.support.AbstractApplicationContext.refresh(AbstractApplicationContext.java:550)
+at org.springframework.boot.web.servlet.context.ServletWebServerApplicationContext.refresh(ServletWebServerApplicationContext.java:140)
+at org.springframework.boot.SpringApplication.refresh(SpringApplication.java:759)
+at org.springframework.boot.SpringApplication.refreshContext(SpringApplication.java:395)
+at org.springframework.boot.SpringApplication.run(SpringApplication.java:327)
+at com.alibaba.otter.canal.admin.CanalAdminApplication.main(CanalAdminApplication.java:19)
+Caused by: org.springframework.beans.BeanInstantiationException: Failed to instantiate [io.ebean.EbeanServer]: Factory method 'ebeanServer' threw exception; nested exception is javax.persistence.PersistenceException: com.mysql.jdbc.exceptions.jdbc4.CommunicationsException: Communications link failure
+
+The last packet sent successfully to the server was 0 milliseconds ago. The driver has not received any packets from the server.
+at org.springframework.beans.factory.support.SimpleInstantiationStrategy.instantiate(SimpleInstantiationStrategy.java:185)
+at org.springframework.beans.factory.support.ConstructorResolver.instantiateUsingFactoryMethod(ConstructorResolver.java:579)
+... 16 common frames omitted
+Caused by: javax.persistence.PersistenceException: com.mysql.jdbc.exceptions.jdbc4.CommunicationsException: Communications link failure
+
+The last packet sent successfully to the server was 0 milliseconds ago. The driver has not received any packets from the server.
+at io.ebeaninternal.server.core.DefaultContainer.checkDataSource(DefaultContainer.java:323)
+at io.ebeaninternal.server.core.DefaultContainer.createServer(DefaultContainer.java:106)
+at io.ebeaninternal.server.core.DefaultContainer.createServer(DefaultContainer.java:35)
+at io.ebean.EbeanServerFactory.createInternal(EbeanServerFactory.java:109)
+at io.ebean.EbeanServerFactory.create(EbeanServerFactory.java:70)
+at com.alibaba.otter.canal.admin.config.EbeanConfig.ebeanServer(EbeanConfig.java:38)
+at com.alibaba.otter.canal.admin.config.EbeanConfig$$EnhancerBySpringCGLIB$$fb20d385.CGLIB$ebeanServer$0(<generated>)
+at com.alibaba.otter.canal.admin.config.EbeanConfig$$EnhancerBySpringCGLIB$$fb20d385$$FastClassBySpringCGLIB$$b153f1d1.invoke(<generated>)
+at org.springframework.cglib.proxy.MethodProxy.invokeSuper(MethodProxy.java:228)
+at org.springframework.context.annotation.ConfigurationClassEnhancer$BeanMethodInterceptor.intercept(ConfigurationClassEnhancer.java:361)
+at com.alibaba.otter.canal.admin.config.EbeanConfig$$EnhancerBySpringCGLIB$$fb20d385.ebeanServer(<generated>)
+at sun.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
+at sun.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)
+at sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)
+at java.lang.reflect.Method.invoke(Method.java:498)
+at org.springframework.beans.factory.support.SimpleInstantiationStrategy.instantiate(SimpleInstantiationStrategy.java:154)
+... 17 common frames omitted
+Caused by: com.mysql.jdbc.exceptions.jdbc4.CommunicationsException: Communications link failure
+
+The last packet sent successfully to the server was 0 milliseconds ago. The driver has not received any packets from the server.
+at sun.reflect.NativeConstructorAccessorImpl.newInstance0(Native Method)
+at sun.reflect.NativeConstructorAccessorImpl.newInstance(NativeConstructorAccessorImpl.java:62)
+at sun.reflect.DelegatingConstructorAccessorImpl.newInstance(DelegatingConstructorAccessorImpl.java:45)
+at java.lang.reflect.Constructor.newInstance(Constructor.java:423)
+at com.mysql.jdbc.Util.handleNewInstance(Util.java:425)
+at com.mysql.jdbc.SQLError.createCommunicationsException(SQLError.java:989)
+at com.mysql.jdbc.MysqlIO.<init>(MysqlIO.java:341)
+at com.mysql.jdbc.ConnectionImpl.coreConnect(ConnectionImpl.java:2251)
+at com.mysql.jdbc.ConnectionImpl.connectOneTryOnly(ConnectionImpl.java:2284)
+at com.mysql.jdbc.ConnectionImpl.createNewIO(ConnectionImpl.java:2083)
+at com.mysql.jdbc.ConnectionImpl.<init>(ConnectionImpl.java:806)
+at com.mysql.jdbc.JDBC4Connection.<init>(JDBC4Connection.java:47)
+at sun.reflect.NativeConstructorAccessorImpl.newInstance0(Native Method)
+at sun.reflect.NativeConstructorAccessorImpl.newInstance(NativeConstructorAccessorImpl.java:62)
+at sun.reflect.DelegatingConstructorAccessorImpl.newInstance(DelegatingConstructorAccessorImpl.java:45)
+at java.lang.reflect.Constructor.newInstance(Constructor.java:423)
+at com.mysql.jdbc.Util.handleNewInstance(Util.java:425)
+at com.mysql.jdbc.ConnectionImpl.getInstance(ConnectionImpl.java:410)
+at com.mysql.jdbc.NonRegisteringDriver.connect(NonRegisteringDriver.java:328)
+at com.zaxxer.hikari.util.DriverDataSource.getConnection(DriverDataSource.java:117)
+at com.zaxxer.hikari.util.DriverDataSource.getConnection(DriverDataSource.java:123)
+at com.zaxxer.hikari.pool.PoolBase.newConnection(PoolBase.java:365)
+at com.zaxxer.hikari.pool.PoolBase.newPoolEntry(PoolBase.java:194)
+at com.zaxxer.hikari.pool.HikariPool.createPoolEntry(HikariPool.java:460)
+at com.zaxxer.hikari.pool.HikariPool.checkFailFast(HikariPool.java:534)
+at com.zaxxer.hikari.pool.HikariPool.<init>(HikariPool.java:115)
+at com.zaxxer.hikari.HikariDataSource.getConnection(HikariDataSource.java:112)
+at io.ebeaninternal.server.core.DefaultContainer.checkDataSource(DefaultContainer.java:316)
+... 32 common frames omitted
+Caused by: java.net.ConnectException: Connection refused (Connection refused)
+at java.net.PlainSocketImpl.socketConnect(Native Method)
+at java.net.AbstractPlainSocketImpl.doConnect(AbstractPlainSocketImpl.java:350)
+at java.net.AbstractPlainSocketImpl.connectToAddress(AbstractPlainSocketImpl.java:206)
+at java.net.AbstractPlainSocketImpl.connect(AbstractPlainSocketImpl.java:188)
+at java.net.SocksSocketImpl.connect(SocksSocketImpl.java:392)
+at java.net.Socket.connect(Socket.java:589)
+at com.mysql.jdbc.StandardSocketFactory.connect(StandardSocketFactory.java:211)
+at com.mysql.jdbc.MysqlIO.<init>(MysqlIO.java:300)
+... 53 common frames omitted
+sh-4.1#
