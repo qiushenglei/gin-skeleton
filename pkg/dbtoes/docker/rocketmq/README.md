@@ -38,6 +38,7 @@ nohup /home/rocketmq/rocketmq-5.1.3/bin/mqbroker -c /home/rocketmq/rocketmq-5.1.
 
 ```
 
+
 ##  dockerfile启动方式
 ```bash
 cd /path/to/dockerfile
