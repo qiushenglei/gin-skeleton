@@ -49,7 +49,6 @@ docker build -t rocketmqdf .
 docker run -it --network dbtoes -d -p 9876:9876 -p 10909:10909 -p 10911:10911 -p 10912:10912 --name=qslrocketmq rocketmqdf bash
 docker run -it --network dbtoes -v /f/go_code/gin-skeleton/pkg/dbtoes/docker/rocketmq/broker.conf:/home/rocketmq/rocketmq-5.1.3/conf/broker.conf -v /f/go_code/gin-skeleton/pkg/dbtoes/docker/rocketmq/start.sh:/home/rocketmq/rocketmq-5.1.3/bin/start.sh  -d -p 9876:9876 -p 10909:10909 -p 10911:10911 -p 10912:10912 --name=qslrocketmq rocketmqdf bash
 
-docker run -it --network dbtoes -v  /f/go_code/gin-skeleton/pkg/dbtoes/docker/rocketmq/broker.conf:/home/rocketmq/rocketmq-5.1.3/conf/broker.conf -d -p 9876:9876 -p 10909:10909 -p 10911:10911 -p 10912:10912 --name=qslrocketmq rocketmqdf bash
 
 # 问题，进到容器内ps 未发现启动服务，容器内去执行start.sh文件是可以启动服务的 
 # 暂时去容器执行start.sh
