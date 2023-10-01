@@ -84,6 +84,7 @@ func (c *RocketMQConsumers) newConsumerByEvent(e rocketpkg.Event) error {
 // newPushConsumers 创建pushConsumer
 func (c *RocketMQConsumers) newPushConsumers(e rocketpkg.Event, serialNumber int) error {
 	// 创建pushConsumer
+	// 这个host可以加到配置项里，可以定义多个rocketmq-server的连接
 	host := fmt.Sprintf("%s:%s", configs.EnvConfig.GetString("ROCKETMQ_TEST_HOST"), configs.EnvConfig.GetString("ROCKETMQ_TEST_PORT"))
 	consumer, err := rocketmq.NewPushConsumer(
 		consumer2.WithGroupName(e.ConsumerGroupName),                               //指定消费者组

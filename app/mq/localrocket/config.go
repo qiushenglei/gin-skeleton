@@ -9,14 +9,17 @@ import (
 
 const (
 	// 订阅事件名
+	DBToESEvent       rocketpkg.EventName = "DBToESEvent"
 	OrderPayEvent     rocketpkg.EventName = "OrderPayEvent"     // 订单支付事件
 	OrderSuccessEvent rocketpkg.EventName = "OrderSuccessEvent" // 订单完成事件
 
 	// 主题topic
-	OrderTopic string = "order"
+	OrderTopic  string = "order"
+	DBToESTopic string = "dbtoes"
 
 	// 消费者组名
-	OrderPayGroup string = "OrderPayGroup"
+	OrderPayGroup    string = "OrderPayGroup"
+	CanalSyncESGroup string = "CanalSyncESGroup"
 )
 
 var (
@@ -29,6 +32,14 @@ var (
 			ConsumerNum:        4,
 			ConsumerGroupName:  OrderPayGroup,
 			ConsumerHandleFunc: OrderPayEventHandle,
+		},
+		DBToESEvent: rocketpkg.Event{
+			EventName:          DBToESEvent,
+			Topic:              DBToESTopic,
+			Tags:               []string{},
+			ConsumerNum:        4,
+			ConsumerGroupName:  CanalSyncESGroup,
+			ConsumerHandleFunc: CanalSyncESHandle,
 		},
 	}
 

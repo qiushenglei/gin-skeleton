@@ -14,3 +14,9 @@ func OrderPayEventHandle(ctx context.Context, msg *primitive.MessageExt) error {
 	logs.Log.Info(ctx, string(msg.Body))
 	return nil
 }
+
+// OrderPayEventHandle 订单支付事件处理
+func CanalSyncESHandle(ctx context.Context, msg *primitive.MessageExt) error {
+	logs.Log.Info(ctx, string(msg.Body))
+	return nil
+}
