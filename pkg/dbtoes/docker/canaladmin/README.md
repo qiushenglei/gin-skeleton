@@ -37,3 +37,7 @@ https://github.com/alibaba/canal/issues/2129#issuecomment-527733476
 ## 远端mysql的 `Table 'canal_test.base table' doesn't exist`
 canal-server:1.1.6版本有问题，直接切到1.1.5。作者回复1.1.6的hotfix有热修复。
 https://github.com/alibaba/canal/issues/4291#issuecomment-1183186920
+
+## 启动instance 提示 rocketmq connect to 127.0.0.1:10911 failed
+启动rocketmq broker时，broker.conf的配置的brokerIP1 = 127.0.0.1，canal-admin连接成了本地的127.0.0.1:10911
+把配置项brokerIP1 = CONTAINER_ID 改成容器名，会指向正确的ip地址
