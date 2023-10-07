@@ -2,8 +2,8 @@ package services
 
 import (
 	"context"
-	"github.com/qiushenglei/gin-skeleton/app/data"
-	"github.com/qiushenglei/gin-skeleton/app/entity"
+	"github.com/qiushenglei/gin-skeleton/internal/app/data"
+	"github.com/qiushenglei/gin-skeleton/internal/app/entity"
 	"time"
 
 	"github.com/gin-gonic/gin"

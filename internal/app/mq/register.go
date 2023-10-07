@@ -2,8 +2,8 @@ package mq
 
 import (
 	"github.com/apache/rocketmq-client-go/v2"
-	"github.com/qiushenglei/gin-skeleton/app/configs"
-	"github.com/qiushenglei/gin-skeleton/app/mq/localrocket"
+	"github.com/qiushenglei/gin-skeleton/internal/app/configs"
+	"github.com/qiushenglei/gin-skeleton/internal/app/mq/localrocket"
 )
 
 // RocketProduct rocketmq消费者

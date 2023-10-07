@@ -1,8 +1,8 @@
 package routes
 
 import (
-	controller "github.com/qiushenglei/gin-skeleton/app/controllers"
-	"github.com/qiushenglei/gin-skeleton/app/middleware"
+	"github.com/qiushenglei/gin-skeleton/internal/app/controllers"
+	middleware2 "github.com/qiushenglei/gin-skeleton/internal/app/middleware"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -19,9 +19,9 @@ func RegisterRoutes() (r *gin.Engine) {
 	// 全局中间件
 	//r.Use(cors.CORS())       // 跨域中间件
 	//r.Use(logging.Logging()) // 日志中间件
-	r.Use(middleware.BindRequestID()) // 请求ID
-	r.Use(middleware.GlobalRecover()) // 全局recover
-	r.Use(middleware.LogRequest())   // 记录请求信息
+	r.Use(middleware2.BindRequestID()) // 请求ID
+	r.Use(middleware2.GlobalRecover()) // 全局recover
+	r.Use(middleware2.LogRequest())    // 记录请求信息
 
 	// 探针
 	r.GET("/", func(ctx *gin.Context) { ctx.String(http.StatusOK, "Hello, this is Gin-Awesome! ") })

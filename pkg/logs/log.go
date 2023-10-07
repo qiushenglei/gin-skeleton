@@ -2,7 +2,7 @@ package logs
 
 import (
 	rotatelogs "github.com/lestrrat/go-file-rotatelogs"
-	"github.com/qiushenglei/gin-skeleton/app/configs"
+	"github.com/qiushenglei/gin-skeleton/internal/app/configs"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 	"io"

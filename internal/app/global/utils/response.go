@@ -1,8 +1,8 @@
 package utils
 
 import (
-	"github.com/qiushenglei/gin-skeleton/app/entity"
-	"github.com/qiushenglei/gin-skeleton/app/global/constants"
+	"github.com/qiushenglei/gin-skeleton/internal/app/entity"
+	"github.com/qiushenglei/gin-skeleton/internal/app/global/constants"
 	"net/http"
 
 	"github.com/gin-gonic/gin"

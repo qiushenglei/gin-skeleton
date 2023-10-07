@@ -1,8 +1,8 @@
-package bootstrap
+package cmd
 
 import (
 	"fmt"
-	"github.com/qiushenglei/gin-skeleton/app/configs"
+	"github.com/qiushenglei/gin-skeleton/internal/app/configs"
 	"github.com/spf13/viper"
 )
 

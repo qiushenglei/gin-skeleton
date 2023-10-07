@@ -1,0 +1,13 @@
+{
+  query: {
+    bool: {
+      must: [
+        {term: {
+          student_id: {
+            value: 2
+          }
+        }}
+      ]
+    }
+  }
+}

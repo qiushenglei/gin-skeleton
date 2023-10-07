@@ -1,13 +1,13 @@
-package bootstrap
+package cmd
 
 import (
 	"context"
 	"github.com/gin-gonic/gin"
-	"github.com/qiushenglei/gin-skeleton/app/configs"
-	"github.com/qiushenglei/gin-skeleton/app/crontabs"
-	"github.com/qiushenglei/gin-skeleton/app/global/constants"
-	"github.com/qiushenglei/gin-skeleton/app/global/utils"
-	"github.com/qiushenglei/gin-skeleton/app/mq/localrocket"
+	"github.com/qiushenglei/gin-skeleton/internal/app/configs"
+	"github.com/qiushenglei/gin-skeleton/internal/app/crontabs"
+	"github.com/qiushenglei/gin-skeleton/internal/app/global/constants"
+	"github.com/qiushenglei/gin-skeleton/internal/app/global/utils"
+	"github.com/qiushenglei/gin-skeleton/internal/app/mq/localrocket"
 	"github.com/qiushenglei/gin-skeleton/pkg/logs"
 	routes "github.com/qiushenglei/gin-skeleton/routes/http"
 	"github.com/robfig/cron/v3"

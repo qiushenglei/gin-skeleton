@@ -2,9 +2,9 @@ package controller
 
 import (
 	"github.com/gin-gonic/gin"
-	"github.com/qiushenglei/gin-skeleton/app/entity"
-	"github.com/qiushenglei/gin-skeleton/app/global/utils"
-	"github.com/qiushenglei/gin-skeleton/app/services"
+	"github.com/qiushenglei/gin-skeleton/internal/app/entity"
+	"github.com/qiushenglei/gin-skeleton/internal/app/global/utils"
+	"github.com/qiushenglei/gin-skeleton/internal/app/services"
 )
 
 // SetKeyValue ...

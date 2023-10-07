@@ -8,8 +8,9 @@ import (
 
 type Event struct {
 	EventName          EventName
-	Topic              string                                             // 消息主题
-	Tags               []string                                           // 消息tags
+	Topic              string   // 消息主题
+	Tags               []string // 消息tags
+	NameSpace          string
 	ConsumerGroupName  string                                             // 所属消费者组
 	ConsumerNum        int                                                // 消费者个数
 	ConsumerHandleFunc func(context.Context, *primitive.MessageExt) error // 处理消息方法

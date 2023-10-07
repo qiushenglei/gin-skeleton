@@ -20,6 +20,9 @@ const (
 	// 消费者组名
 	OrderPayGroup    string = "OrderPayGroup"
 	CanalSyncESGroup string = "CanalSyncESGroup"
+
+	// topic所输namespace，不同namespace下可以同名topic
+	SyncData string = "dbtoes"
 )
 
 var (
@@ -37,6 +40,7 @@ var (
 			EventName:          DBToESEvent,
 			Topic:              DBToESTopic,
 			Tags:               []string{},
+			NameSpace:          SyncData,
 			ConsumerNum:        4,
 			ConsumerGroupName:  CanalSyncESGroup,
 			ConsumerHandleFunc: CanalSyncESHandle,

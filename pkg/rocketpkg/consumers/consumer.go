@@ -6,8 +6,8 @@ import (
 	"github.com/apache/rocketmq-client-go/v2"
 	consumer2 "github.com/apache/rocketmq-client-go/v2/consumer"
 	"github.com/apache/rocketmq-client-go/v2/primitive"
-	"github.com/qiushenglei/gin-skeleton/app/configs"
-	"github.com/qiushenglei/gin-skeleton/app/global/utils"
+	"github.com/qiushenglei/gin-skeleton/internal/app/configs"
+	"github.com/qiushenglei/gin-skeleton/internal/app/global/utils"
 	"github.com/qiushenglei/gin-skeleton/pkg/logs"
 	"github.com/qiushenglei/gin-skeleton/pkg/rocketpkg"
 	"golang.org/x/net/context"
@@ -87,10 +87,11 @@ func (c *RocketMQConsumers) newPushConsumers(e rocketpkg.Event, serialNumber int
 	// 这个host可以加到配置项里，可以定义多个rocketmq-server的连接
 	host := fmt.Sprintf("%s:%s", configs.EnvConfig.GetString("ROCKETMQ_TEST_HOST"), configs.EnvConfig.GetString("ROCKETMQ_TEST_PORT"))
 	consumer, err := rocketmq.NewPushConsumer(
-		consumer2.WithGroupName(e.ConsumerGroupName),                               //指定消费者组
+		consumer2.WithGroupName(e.ConsumerGroupName), //指定消费者组
+		consumer2.WithNamespace(e.NameSpace),
 		consumer2.WithInstance(e.ConsumerGroupName+strconv.Itoa(serialNumber)),     //同一消费者组的不同消费者标识，不加上会有问题
 		consumer2.WithNsResolver(primitive.NewPassthroughResolver([]string{host})), //服务ip
-		consumer2.WithRetry(5), // 重试次数
+		consumer2.WithRetry(5),                                                     // 重试次数
 	)
 
 	if err != nil {

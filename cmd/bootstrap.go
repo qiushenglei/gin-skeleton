@@ -1,9 +1,9 @@
-package bootstrap
+package cmd
 
 import (
 	"fmt"
-	"github.com/qiushenglei/gin-skeleton/app/data"
-	"github.com/qiushenglei/gin-skeleton/app/mq"
+	"github.com/qiushenglei/gin-skeleton/internal/app/data"
+	"github.com/qiushenglei/gin-skeleton/internal/app/mq"
 	"github.com/qiushenglei/gin-skeleton/pkg/logs"
 	"golang.org/x/net/context"
 	"os"
