@@ -4,11 +4,10 @@ import (
 	"context"
 	"crypto/tls"
 	"fmt"
-	"github.com/elastic/go-elasticsearch/v7"
+	"github.com/elastic/go-elasticsearch/v8"
 	"github.com/qiushenglei/gin-skeleton/internal/app/configs"
 	"github.com/qiushenglei/gin-skeleton/internal/app/global/utils"
 	"github.com/qiushenglei/gin-skeleton/pkg/dbtoes"
-	"net"
 	"net/http"
 	"time"
 
@@ -30,6 +29,9 @@ var (
 
 	// ElasticSearch connections
 	ESClient *elasticsearch.Client
+
+	// ElasticSearch connections
+	TypedESClient *elasticsearch.TypedClient
 
 	// MongoDB connections
 	//MongoClient MongoCli
@@ -145,13 +147,14 @@ func RegisterES() {
 		Addresses: []string{ESAddr},
 		Transport: &http.Transport{
 			MaxIdleConnsPerHost:   10,
-			ResponseHeaderTimeout: time.Millisecond,
-			DialContext:           (&net.Dialer{Timeout: time.Nanosecond}).DialContext,
+			ResponseHeaderTimeout: 100 * time.Millisecond,
+			//DialContext:           (&net.Dialer{Timeout: time.Nanosecond}).DialContext,
 			TLSClientConfig: &tls.Config{
 				MinVersion: tls.VersionTLS12,
 				// ...
 			},
 		},
 	}
-	ESClient = dbtoes.NewESClient(cfg)
+	//ESClient = dbtoes.NewESClient(cfg)
+	TypedESClient = dbtoes.NewESTypedClient1(cfg)
 }

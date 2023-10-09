@@ -1,18 +1,32 @@
-package example
+package student_score_idx
 
 import (
-	"bytes"
 	"context"
 	"encoding/json"
-	"errors"
-	"fmt"
 	"github.com/elastic/go-elasticsearch/v8/typedapi/core/search"
 	"github.com/elastic/go-elasticsearch/v8/typedapi/types"
 	"github.com/qiushenglei/gin-skeleton/pkg/dbtoes"
-	"io"
+	"github.com/qiushenglei/gin-skeleton/pkg/errorpkg"
+	"golang.org/x/text/cases"
+	"golang.org/x/text/language"
+	"reflect"
 )
 
+// StudentScoreIdx es index name
 const StudentScoreIdx = "student_score_idx"
+
+// ForeignKey 外键
+const ForeignKey = "student_id"
+
+type A interface {
+	Gan()
+}
+
+var tableMap = map[string]A{
+	"StudentScoreUser":  &StudentScoreUser{},
+	"StudentScoreClass": &StudentScoreClass{},
+	"StudentScoreScore": &StudentScoreScore{},
+}
 
 type StudentScoreStruct struct {
 	Id         int      `json:"id"`
@@ -52,39 +66,16 @@ func (s *StudentScoreSync) UpdateSync(i *dbtoes.Index) error {
 }
 
 func (s *StudentScoreSync) FindPrimaryTable(i *dbtoes.Index) error {
-	if i.IsPrimaryTable == false {
-		if _, ok := i.BodyJson[i.ForeignKey]; ok == false {
-			// errors.New("没有主键，不需要更改")
-			return nil
+	// 不是主表并且没有主键，不需要同步到es
+	if !i.IsPrimaryTable {
+		if _, ok := i.BodyJson[i.ForeignKey]; !ok {
+			return errorpkg.NewBizErrx(dbtoes.CodeSyncNoLoop, "更新的表没有主键，不需要同步到es")
 		}
 	}
 
-	// planA ESConn client
-	query :=
-		`{
-		  "query": {
-			"bool": {
-			  "must": [
-				{"term": {
-				  "student_id": {
-					"value": "2"
-				  }
-				}}
-			  ]
-			}
-		  }
-		}`
-
-	resp, err := i.ESConn.Search(
-		i.ESConn.Search.WithIndex(StudentScoreIdx),
-		i.ESConn.Search.WithBody(bytes.NewBufferString(query)),
-	)
-	_, err = io.ReadAll(resp.Body)
-
-	// plan B
 	q1 := types.NewQuery()
 	q1.Term = map[string]types.TermQuery{
-		"student_id": types.TermQuery{Value: 2},
+		i.ForeignKey: types.TermQuery{Value: i.BodyJson[i.ForeignKey]},
 	}
 
 	request := &search.Request{
@@ -103,12 +94,12 @@ func (s *StudentScoreSync) FindPrimaryTable(i *dbtoes.Index) error {
 	}
 
 	if typeResp.Hits.Total.Value < 1 {
-		return errors.New("no find primary table, loop")
+		return errorpkg.NewBizErrx(errorpkg.CodeFalse, "no found primary table")
 	}
 
-	//if typeResp.Hits.Total.Value > 1 {
-	//	panic(errors.New("is not unique, fatal"))
-	//}
+	if typeResp.Hits.Total.Value > 1 {
+		panic(errorpkg.NewBizErrx(errorpkg.CodeFalse, "is not unique, fatal"))
+	}
 
 	var dataStruct StudentScoreStruct
 	err = json.Unmarshal(typeResp.Hits.Hits[0].Source_, &dataStruct)
@@ -122,25 +113,39 @@ func (s *StudentScoreSync) FindPrimaryTable(i *dbtoes.Index) error {
 
 func (s *StudentScoreSync) InsertSync(i *dbtoes.Index) error {
 
-	dataStruct, ok := i.PrimarySource.(*StudentScoreStruct)
-	if ok == false {
-		panic(11)
-	}
-	dataStruct.AddTime = "2020-03-10 12:20:31"
-	// plan B
-	q1 := types.NewQuery()
-	q1.Term = map[string]types.TermQuery{
-		"_id": types.TermQuery{Value: i.PrimaryID},
-	}
-
-	Resp, err := i.TypedESConn.Update(StudentScoreIdx, i.PrimaryID).Doc(dataStruct).Do(context.Background())
-	if err != nil {
-		panic(err)
-	}
-
-	fmt.Println(Resp.Id_)
-
-	//i.TypedESConn.Index(StudentScoreIdx).Request().Do(context.Background())
-
+	s.ReflectCallMethod(i, "Insert")
 	return nil
+}
+
+func (s *StudentScoreSync) GetIdxStructName(i *dbtoes.Index) string {
+	table := cases.Title(language.Und).String(i.SyncTable)
+	return "StudentScore" + table
+}
+
+func (s *StudentScoreSync) ReflectCallMethod(i *dbtoes.Index, MethodName string) {
+
+	// 通过表名回去struct的名字
+	structName := s.GetIdxStructName(i)
+
+	// 获取实例
+	o, ok := tableMap[structName]
+	if ok != true {
+		panic("define map false")
+	}
+
+	// 通过reflect动态调用表结构体的方法
+	v := reflect.ValueOf(o)
+
+	if v.Kind() == reflect.Pointer {
+		//elem := reflect.Indirect(v)
+		//if elem.Kind() == reflect.Struct {
+		f := v.MethodByName(MethodName)
+		if f.IsValid() == true && f.Kind() == reflect.Func {
+			params := []reflect.Value{
+				reflect.ValueOf(i),
+			}
+			f.Call(params)
+		}
+		//}
+	}
 }

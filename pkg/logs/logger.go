@@ -26,7 +26,7 @@ func (l *Logger) Error(ctx context.Context, args ...interface{}) {
 
 func (l *Logger) Info(ctx context.Context, args ...interface{}) {
 	args = l.addRequestID(ctx, args)
-	l.zapLogger.Info(args...)
+	l.zapLogger.Info(11)
 }
 
 func (l *Logger) Warn(ctx context.Context, args ...interface{}) {

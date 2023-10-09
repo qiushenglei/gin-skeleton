@@ -2,8 +2,8 @@ package dbtoes
 
 import (
 	"context"
-	"github.com/elastic/go-elasticsearch/v7"
-	"github.com/qiushenglei/gin-skeleton/pkg/logs"
+	"fmt"
+	"github.com/elastic/go-elasticsearch/v8"
 	"io"
 )
 
@@ -14,16 +14,10 @@ func NewESClient(cfg elasticsearch.Config) *elasticsearch.Client {
 	}
 
 	// ping
-	resp, err := client.Ping()
+	_, err = client.Ping()
 	if err != nil {
 		panic(err)
 	}
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		panic(err)
-	}
-
-	logs.Log.Info(context.Background(), string(body))
 
 	// 本地调试代码，查看index的mapping
 	i, err := client.Indices.GetMapping(
@@ -32,10 +26,31 @@ func NewESClient(cfg elasticsearch.Config) *elasticsearch.Client {
 	if err != nil {
 		panic(err)
 	}
-	body, err = io.ReadAll(i.Body)
+	_, err = io.ReadAll(i.Body)
 	if err != nil {
 		panic(err)
 	}
 
+	return client
+}
+
+func NewESTypedClient1(cfg elasticsearch.Config) *elasticsearch.TypedClient {
+	client, err := elasticsearch.NewTypedClient(cfg)
+	if err != nil {
+		panic(err)
+	}
+
+	// ping
+	if ok, err := client.Ping().Do(context.Background()); err != nil || !ok {
+		panic(err)
+	}
+
+	// 本地调试代码，查看index的mapping
+	resp, err := client.Indices.GetMapping().Index("student_score").Do(context.Background())
+	if err != nil {
+		panic(err)
+	}
+
+	fmt.Println(resp)
 	return client
 }

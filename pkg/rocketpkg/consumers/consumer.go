@@ -106,6 +106,13 @@ func (c *RocketMQConsumers) newPushConsumers(e rocketpkg.Event, serialNumber int
 
 	// 订阅
 	err = consumer.Subscribe(e.Topic, selector, func(ctx context.Context, ext ...*primitive.MessageExt) (consumer2.ConsumeResult, error) {
+		// 接住panic，做重试或者其他任务
+		defer func() {
+			if r := recover(); r != nil {
+				// TODO::重试或者结束
+			}
+		}()
+
 		// 目前只处理了只有一个消息的情况
 		err := e.ConsumerHandleFunc(ctx, ext[0])
 		if err != nil {
