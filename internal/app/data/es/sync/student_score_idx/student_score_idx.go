@@ -40,7 +40,7 @@ func NewStudentScoreSync() *StudentScoreSync {
 func (s *StudentScoreSync) FindPrimaryTableByPForeignKey(i *dbtoes.Index) error {
 	// 不是主表并且没有主键，不需要同步到es
 	if !i.IsPrimaryTable {
-		if _, ok := i.BodyJson[i.ForeignKey]; !ok {
+		if _, ok := i.BodyFirstData[i.ForeignKey]; !ok {
 			return errorpkg.NewBizErrx(dbtoes.CodeSyncNoLoop, "更新的表没有主键，不需要同步到es")
 		}
 	}
