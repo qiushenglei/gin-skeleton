@@ -147,7 +147,7 @@ func RegisterES() {
 		Addresses: []string{ESAddr},
 		Transport: &http.Transport{
 			MaxIdleConnsPerHost:   10,
-			ResponseHeaderTimeout: 100 * time.Millisecond,
+			ResponseHeaderTimeout: 1000 * time.Millisecond,
 			//DialContext:           (&net.Dialer{Timeout: time.Nanosecond}).DialContext,
 			TLSClientConfig: &tls.Config{
 				MinVersion: tls.VersionTLS12,

@@ -34,6 +34,7 @@ type Index struct {
 	Body           []byte
 	BodyJson       map[string]interface{}
 	BodyData       []interface{}
+	BodyFirstData  map[string]interface{}
 	PrimaryID      string
 	PrimarySource  interface{}
 }
@@ -50,7 +51,7 @@ func (i *Index) SetPrimaryID(PrimaryID string) {
 type Synchronizer interface {
 	InsertSync(i *Index) error
 	UpdateSync(i *Index) error
-	FindPrimaryTable(i *Index) error
+	FindPrimaryTableByPForeignKey(i *Index) error
 }
 
 type Option func(*Index)
@@ -138,6 +139,7 @@ func (i *Index) parseSQLType() {
 
 func (i *Index) parseBodyData() {
 	i.BodyData = (i.BodyJson)["data"].([]interface{})
+	i.BodyFirstData = i.BodyData[0].(map[string]interface{})
 }
 
 func (i *Index) parseIsPrimaryTable() {
@@ -182,10 +184,22 @@ func (i *Index) proc() {
 }
 
 func (i *Index) Update() {
-	// TODO::判断哪些表需要变(有外键绑定的才能知道)
+	// es查询主表内容,如果没有主表document，挂起goroutine,等待主表插入后执行(sleep，不能使用chan因为是分布式系统)
+	for {
+		// 查主表信息，找到es的doc_id,用于后续更新doc。没有查到主表信息，则loop等待其他协程同步主表信息到es
+		if err := i.sync.FindPrimaryTableByPForeignKey(i); err != nil {
+			//
+			if v, ok := err.(errorpkg.Errx); ok && v.Code() == CodeSyncNoLoop {
+				return
+			}
+			time.Sleep(2 * time.Second)
+			continue
+		} else {
+			break
+		}
+	}
 
-	// TODO::修改
-	//i.sync.updateSync()
+	i.sync.UpdateSync(i)
 }
 
 func (i *Index) Insert() {
@@ -198,7 +212,7 @@ func (i *Index) Insert() {
 
 		// 非主表，查主表信息，找到es的doc_id,用于后续更新doc
 		// 没有查到主表信息，则loop等待其他协程同步主表信息到es
-		if err := i.sync.FindPrimaryTable(i); err != nil {
+		if err := i.sync.FindPrimaryTableByPForeignKey(i); err != nil {
 			//
 			if v, ok := err.(errorpkg.Errx); ok && v.Code() == CodeSyncNoLoop {
 				return

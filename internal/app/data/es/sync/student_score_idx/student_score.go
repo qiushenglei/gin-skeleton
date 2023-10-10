@@ -18,40 +18,15 @@ const StudentScoreIdx = "student_score_idx"
 // ForeignKey 外键
 const ForeignKey = "student_id"
 
-type A interface {
-	Gan()
+type TableSync interface {
+	Insert(i *dbtoes.Index) error
+	Update(i *dbtoes.Index) error
 }
 
-var tableMap = map[string]A{
+var tableMap = map[string]TableSync{
 	"StudentScoreUser":  &StudentScoreUser{},
 	"StudentScoreClass": &StudentScoreClass{},
 	"StudentScoreScore": &StudentScoreScore{},
-}
-
-type StudentScoreStruct struct {
-	Id         int      `json:"id"`
-	Username   string   `json:"username"`
-	Label      []string `json:"label"`
-	ClassId    int      `json:"class_id"`
-	StudentId  string   `json:"student_id"`
-	AddTime    string   `json:"add_time"`
-	UpdateTime string   `json:"update_time"`
-	IsDeleted  int      `json:"is_deleted"`
-	ClassInfo  struct {
-		ClassId    int    `json:"class_id"`
-		ClassName  string `json:"class_name"`
-		Grade      int    `json:"grade"`
-		AddTime    string `json:"add_time"`
-		UpdateTime string `json:"update_time"`
-	} `json:"class_info"`
-	ScoreInfo []struct {
-		Id         int    `json:"id"`
-		StudentId  string `json:"student_id"`
-		SubjectId  int    `json:"subject_id"`
-		Score      int    `json:"score"`
-		AddTime    string `json:"add_time"`
-		UpdateTime string `json:"update_time"`
-	} `json:"score_info"`
 }
 
 type StudentScoreSync struct {
@@ -61,11 +36,8 @@ func NewStudentScoreSync() *StudentScoreSync {
 	return &StudentScoreSync{}
 }
 
-func (s *StudentScoreSync) UpdateSync(i *dbtoes.Index) error {
-	return nil
-}
-
-func (s *StudentScoreSync) FindPrimaryTable(i *dbtoes.Index) error {
+// FindPrimaryTableByPForeignKey 通过外键查主表信息
+func (s *StudentScoreSync) FindPrimaryTableByPForeignKey(i *dbtoes.Index) error {
 	// 不是主表并且没有主键，不需要同步到es
 	if !i.IsPrimaryTable {
 		if _, ok := i.BodyJson[i.ForeignKey]; !ok {
@@ -75,7 +47,7 @@ func (s *StudentScoreSync) FindPrimaryTable(i *dbtoes.Index) error {
 
 	q1 := types.NewQuery()
 	q1.Term = map[string]types.TermQuery{
-		i.ForeignKey: types.TermQuery{Value: i.BodyJson[i.ForeignKey]},
+		i.ForeignKey: types.TermQuery{Value: i.BodyFirstData[i.ForeignKey]},
 	}
 
 	request := &search.Request{
@@ -101,7 +73,7 @@ func (s *StudentScoreSync) FindPrimaryTable(i *dbtoes.Index) error {
 		panic(errorpkg.NewBizErrx(errorpkg.CodeFalse, "is not unique, fatal"))
 	}
 
-	var dataStruct StudentScoreStruct
+	var dataStruct StudentScoreUser
 	err = json.Unmarshal(typeResp.Hits.Hits[0].Source_, &dataStruct)
 	if err != nil {
 		panic(err)
@@ -111,18 +83,26 @@ func (s *StudentScoreSync) FindPrimaryTable(i *dbtoes.Index) error {
 	return nil
 }
 
+// InsertSync insert document
 func (s *StudentScoreSync) InsertSync(i *dbtoes.Index) error {
+	err := s.ReflectCallMethod(i, "Insert")
+	return err
+}
 
-	s.ReflectCallMethod(i, "Insert")
+// UpdateSync update document
+func (s *StudentScoreSync) UpdateSync(i *dbtoes.Index) error {
+	s.ReflectCallMethod(i, "Update")
 	return nil
 }
 
+// GetIdxStructName 获取index对应的结构体名称
 func (s *StudentScoreSync) GetIdxStructName(i *dbtoes.Index) string {
 	table := cases.Title(language.Und).String(i.SyncTable)
 	return "StudentScore" + table
 }
 
-func (s *StudentScoreSync) ReflectCallMethod(i *dbtoes.Index, MethodName string) {
+// ReflectCallMethod 通过反射调用 修改表 的 指定函数名方法
+func (s *StudentScoreSync) ReflectCallMethod(i *dbtoes.Index, MethodName string) error {
 
 	// 通过表名回去struct的名字
 	structName := s.GetIdxStructName(i)
@@ -134,18 +114,23 @@ func (s *StudentScoreSync) ReflectCallMethod(i *dbtoes.Index, MethodName string)
 	}
 
 	// 通过reflect动态调用表结构体的方法
+	//var res []reflect.Value
 	v := reflect.ValueOf(o)
 
+	// 因为调用的方法都是指针类型的结构体方法，所以map定义成了&struct，这里的类型就成了Pointer，不知道怎么改
 	if v.Kind() == reflect.Pointer {
-		//elem := reflect.Indirect(v)
-		//if elem.Kind() == reflect.Struct {
 		f := v.MethodByName(MethodName)
 		if f.IsValid() == true && f.Kind() == reflect.Func {
 			params := []reflect.Value{
 				reflect.ValueOf(i),
 			}
-			f.Call(params)
+			res := f.Call(params)
+
+			// 方法默认都返回error
+			if v, ok := res[0].Interface().(error); ok {
+				return v
+			}
 		}
-		//}
 	}
+	return nil
 }

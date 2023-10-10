@@ -2,33 +2,33 @@ package student_score_idx
 
 import (
 	"context"
+	"encoding/json"
 	"github.com/qiushenglei/gin-skeleton/internal/app/global/utils"
 	"github.com/qiushenglei/gin-skeleton/pkg/dbtoes"
+	"github.com/qiushenglei/gin-skeleton/pkg/errorpkg"
 )
 
 type StudentScoreUser struct {
-	Id         int                  `json:"id"`
+	Id         int                  `json:"id,string"`
 	Username   string               `json:"username"`
 	Label      []string             `json:"label"`
-	ClassId    int                  `json:"class_id"`
+	ClassId    int                  `json:"class_id,string"`
 	StudentId  string               `json:"student_id"`
 	AddTime    string               `json:"add_time"`
 	UpdateTime string               `json:"update_time"`
-	IsDeleted  int                  `json:"is_deleted"`
+	IsDeleted  int                  `json:"is_deleted,string"`
 	ClassInfo  *StudentScoreClass   `json:"class_info"`
 	ScoreInfo  []*StudentScoreScore `json:"score_info"`
 }
 
-func (u *StudentScoreUser) Gan() {
-
-}
-
 func (u *StudentScoreUser) Insert(i *dbtoes.Index) error {
-	// 获取data数据
-	data := i.BodyData[0]
+
+	//处理特殊字段
+	data := u.handleSpecialFields(i)
 
 	// interface转成struct
 	var newData StudentScoreUser
+
 	utils.Interface2Struct(data, &newData)
 
 	// 插入新document
@@ -46,13 +46,16 @@ func (u *StudentScoreUser) Insert(i *dbtoes.Index) error {
 }
 
 func (u *StudentScoreUser) Update(i *dbtoes.Index) error {
+
+	// ES index原数据
 	originData, ok := i.PrimarySource.(*StudentScoreUser)
+	// 没有查找主表信息的，直接嘎
 	if ok == false {
-		panic(11)
+		panic(errorpkg.ErrLogic)
 	}
 
-	// 获取data数据
-	data := i.BodyData[0]
+	// 处理msg特殊字段
+	data := u.handleSpecialFields(i)
 
 	// interface转成struct
 	var newData StudentScoreUser
@@ -70,4 +73,20 @@ func (u *StudentScoreUser) Update(i *dbtoes.Index) error {
 	i.SetPrimaryID(Resp.Id_)
 	i.SetPrimarySource(newData)
 	return nil
+}
+
+func (u *StudentScoreUser) handleSpecialFields(i *dbtoes.Index) map[string]interface{} {
+	// 获取data数据
+
+	var test []string
+
+	// label字段
+	if l, ok := i.BodyFirstData["label"].(string); ok {
+		json.Unmarshal([]byte(l), &test)
+		i.BodyFirstData["label"] = test
+	}
+
+	//其他字段
+
+	return i.BodyFirstData
 }

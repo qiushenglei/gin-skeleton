@@ -11,6 +11,7 @@ import (
 	"github.com/qiushenglei/gin-skeleton/pkg/logs"
 	"github.com/qiushenglei/gin-skeleton/pkg/rocketpkg"
 	"golang.org/x/net/context"
+	"log"
 	"strconv"
 	"strings"
 	"sync"
@@ -109,6 +110,7 @@ func (c *RocketMQConsumers) newPushConsumers(e rocketpkg.Event, serialNumber int
 		// 接住panic，做重试或者其他任务
 		defer func() {
 			if r := recover(); r != nil {
+				log.Println(r)
 				// TODO::重试或者结束
 			}
 		}()

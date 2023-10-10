@@ -70,7 +70,7 @@ func AATest() {
 	}`)
 
 	index := dbtoes.NewIndex(
-		dbtoes.WithForeignKey1("user_id"),
+		dbtoes.WithForeignKey("user_id"),
 		dbtoes.WithPrimaryTable1("user"),
 		dbtoes.WithTables([]string{"user", "class", "score", "subject"}),
 		dbtoes.WithSynchronizer(NewStudentScoreSync()),
