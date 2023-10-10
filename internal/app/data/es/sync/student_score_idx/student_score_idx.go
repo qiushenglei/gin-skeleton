@@ -12,10 +12,10 @@ import (
 	"reflect"
 )
 
-// StudentScoreIdx es index name
+// StudentScoreIdx es index name。
 const StudentScoreIdx = "student_score_idx"
 
-// ForeignKey 外键
+// ForeignKey 外键。
 const ForeignKey = "student_id"
 
 type TableSync interface {

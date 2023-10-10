@@ -2,7 +2,6 @@ package dbtoes
 
 import (
 	"context"
-	"fmt"
 	"github.com/elastic/go-elasticsearch/v8"
 	"io"
 )
@@ -45,12 +44,12 @@ func NewESTypedClient1(cfg elasticsearch.Config) *elasticsearch.TypedClient {
 		panic(err)
 	}
 
-	// 本地调试代码，查看index的mapping
-	resp, err := client.Indices.GetMapping().Index("student_score").Do(context.Background())
-	if err != nil {
-		panic(err)
-	}
+	//// 本地调试代码，查看index的mapping，这里必要要有student_score_idx索引才会成功
+	//resp, err := client.Indices.GetMapping().Index("student_score_idx").Do(context.Background())
+	//if err != nil {
+	//	panic(err)
+	//}
+	//fmt.Println(resp)
 
-	fmt.Println(resp)
 	return client
 }
