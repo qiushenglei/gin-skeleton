@@ -1,6 +1,7 @@
 package logs
 
 import (
+	"github.com/anguloc/zet/pkg/safe"
 	rotatelogs "github.com/lestrrat/go-file-rotatelogs"
 	"github.com/qiushenglei/gin-skeleton/internal/app/configs"
 	"go.uber.org/zap"
@@ -9,13 +10,16 @@ import (
 	"time"
 )
 
+// 分成4个文件
 var levelMap = map[string][]zapcore.Level{
 	"info": {
 		zapcore.DebugLevel,
 		zapcore.InfoLevel,
 	},
-	"error": {
+	"warn": {
 		zapcore.WarnLevel,
+	},
+	"error": {
 		zapcore.ErrorLevel,
 		zapcore.DPanicLevel,
 		zapcore.PanicLevel,
@@ -25,12 +29,16 @@ var levelMap = map[string][]zapcore.Level{
 	},
 }
 
-var levelEnableMap = map[string]zap.LevelEnablerFunc{
+// 每个文件，每个文件记录日志的等级。如果只有一个文件，就是永远返回true
+var levelEnableFuncMap = map[string]zap.LevelEnablerFunc{
 	"info": zap.LevelEnablerFunc(func(level zapcore.Level) bool {
 		return level < zapcore.WarnLevel
 	}),
+	"warn": zap.LevelEnablerFunc(func(level zapcore.Level) bool {
+		return level == zapcore.WarnLevel
+	}),
 	"error": zap.LevelEnablerFunc(func(level zapcore.Level) bool {
-		return level >= zapcore.WarnLevel && level < zapcore.FatalLevel
+		return level > zapcore.WarnLevel && level < zapcore.FatalLevel
 	}),
 	"fatal": zap.LevelEnablerFunc(func(level zapcore.Level) bool {
 		return level >= zapcore.FatalLevel
@@ -40,7 +48,7 @@ var levelEnableMap = map[string]zap.LevelEnablerFunc{
 // RegisterLogger 注册日志
 func RegisterLogger() (func() error, error) {
 	var err error
-	Log, err = getInitLogger(configs.EnvConfig.GetString("LOG_PATH"), configs.EnvConfig.GetString("LOG_EXT"))
+	Log, err = getInitLogger(safe.Path(configs.EnvConfig.GetString("LOG_PATH")), configs.EnvConfig.GetString("LOG_EXT"))
 	//Log.Warn()
 	if err != nil {
 		return nil, err
@@ -61,7 +69,7 @@ func getInitLogger(filepath, fileext string) (*Logger, error) {
 			return nil, err
 		}
 
-		cores = append(cores, zapcore.NewCore(encoder, ws, levelEnableMap[k]))
+		cores = append(cores, zapcore.NewCore(encoder, ws, levelEnableFuncMap[k]))
 	}
 
 	//创建具体的Logger
@@ -89,12 +97,17 @@ func getEncoder() zapcore.Encoder {
 		EncodeDuration: zapcore.SecondsDurationEncoder,
 		EncodeCaller:   zapcore.FullCallerEncoder,
 	}
+
 	//encoderConfig := zap.NewProductionEncoderConfig()
 	//encoderConfig := zap.NewDevelopmentEncoderConfig()
 	//encoderConfig.EncodeTime = zapcore.ISO8601TimeEncoder
 	//encoderConfig.EncodeLevel = zapcore.CapitalLevelEncoder
-	//return zapcore.NewConsoleEncoder(encoderConfig)
-	return zapcore.NewJSONEncoder(encoderConfig)
+	//return zapcore.NewConsoleEncoder(encoderConfig)	//console格式保存（多个字段空格隔开）
+
+	encoderConfig.EncodeTime = func(t time.Time, enc zapcore.PrimitiveArrayEncoder) {
+		enc.AppendString(t.Format("2006-01-02 15:04:05"))
+	}
+	return zapcore.NewJSONEncoder(encoderConfig) //json格式保存
 }
 
 // LogWriter

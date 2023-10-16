@@ -3,6 +3,7 @@ package utils
 import (
 	"github.com/qiushenglei/gin-skeleton/internal/app/entity"
 	"github.com/qiushenglei/gin-skeleton/internal/app/global/constants"
+	"github.com/qiushenglei/gin-skeleton/pkg/errorpkg"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -21,14 +22,21 @@ func Response(c *gin.Context, data interface{}, err error) {
 			},
 		)
 	} else {
-		//e := errors.FromErrorPro(err, 500, "", nil)
-		//log.ErrorLogger.Info("", errZapFields(e)...)
+		var code int
+		var msg string
+		if e, ok := err.(errorpkg.Errx); ok {
+			code = e.Code()
+			msg = e.Msg()
+		} else {
+			code = errorpkg.CodeFalse
+			msg = err.Error()
+		}
 		c.JSON(
-			http.StatusOK,
+			http.StatusInternalServerError,
 			entity.DefaultResponse{
-				//Code: e.GetCode(),
-				//Msg:  e.GetMessage(),
-				//Data: e.GetData(),
+				Code: code,
+				Msg:  msg,
+				Data: data,
 			},
 		)
 	}

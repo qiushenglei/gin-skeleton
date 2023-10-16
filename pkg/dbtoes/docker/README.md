@@ -103,6 +103,9 @@ PUT /student_score_idx
       "id": {
         "type": "long"
       },
+      "username1": {
+        "type": "keyword"
+      },
       "username": {
         "type": "wildcard"
       },
@@ -113,7 +116,7 @@ PUT /student_score_idx
         "type": "long"
       },
       "student_id": {
-        "type": "text"
+        "type": "keyword"
       },
       "add_time": {
         "type": "date",
@@ -169,6 +172,19 @@ PUT /student_score_idx
           "update_time": {
             "type": "date",
             "format": "yyyy-MM-dd HH:mm:ss"
+          },
+          "subject_info": {
+            "type": "object",
+            "properties": {
+              "subject_name": {
+                "type": "text",
+                "fields": {
+                  "sub_name": {
+                    "type": "keyword"
+                  }
+                }
+              } 
+            }
           }
         }
       }

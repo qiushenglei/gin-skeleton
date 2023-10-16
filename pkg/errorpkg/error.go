@@ -11,8 +11,16 @@ const (
 
 type Errx struct {
 	code int    // 错误码
-	Msg  string // 错误信息
+	msg  string // 错误信息
 	cate string // 错误类型
+}
+
+func (e Errx) Msg() string {
+	return e.msg
+}
+
+func (e Errx) Cate() string {
+	return e.cate
 }
 
 func (e Errx) Code() int {
@@ -24,14 +32,14 @@ func (e Errx) Error() string {
 }
 
 func (e Errx) SetMsg(msg string) Errx {
-	e.Msg = msg
+	e.msg = msg
 	return e
 }
 
 func NewSysErrx(code int, msg string) Errx {
 	return Errx{
 		code: code,
-		Msg:  msg,
+		msg:  msg,
 		cate: cateSys,
 	}
 }
@@ -39,7 +47,7 @@ func NewSysErrx(code int, msg string) Errx {
 func NewBizErrx(code int, msg string) Errx {
 	return Errx{
 		code: code,
-		Msg:  msg,
+		msg:  msg,
 		cate: cateBiz,
 	}
 }
@@ -47,7 +55,15 @@ func NewBizErrx(code int, msg string) Errx {
 func NewIOErrx(code int, msg string) Errx {
 	return Errx{
 		code: code,
-		Msg:  msg,
+		msg:  msg,
+		cate: cateIO,
+	}
+}
+
+func NewNoGinContextErrx(code int, msg string) Errx {
+	return Errx{
+		code: code,
+		msg:  msg,
 		cate: cateIO,
 	}
 }
@@ -58,11 +74,15 @@ const (
 	codeLogic = 10001 // 逻辑异常
 	codeParam = 10002 // 参数错误
 
-	CodeFalse = 10086
+	CodeFalse        = 10086
+	CodeNoGinContext = 10087
+
+	CodeBodyBind = 10088
 )
 
 var (
-	ErrSystem = NewSysErrx(codeSystem, "system err")
-	ErrLogic  = NewBizErrx(codeLogic, "logic err")
-	ErrParam  = NewBizErrx(codeParam, "param invalid")
+	ErrSystem       = NewSysErrx(codeSystem, "system err")
+	ErrLogic        = NewBizErrx(codeLogic, "logic err")
+	ErrParam        = NewBizErrx(codeParam, "param invalid")
+	ErrNoGinContext = NewNoGinContextErrx(CodeNoGinContext, "no gin context")
 )

@@ -12,8 +12,8 @@ import (
 	"reflect"
 )
 
-// StudentScoreIdx es index name。
-const StudentScoreIdx = "student_score_idx"
+// StudentScoreIdx1 es index name。
+const StudentScoreIdx1 = "student_score_idx"
 
 // ForeignKey 外键。
 const ForeignKey = "student_id"
@@ -24,7 +24,7 @@ type TableSync interface {
 }
 
 var tableMap = map[string]TableSync{
-	"StudentScoreUser":  &StudentScoreUser{},
+	"StudentScoreUser1": &StudentScoreUser1{},
 	"StudentScoreClass": &StudentScoreClass{},
 	"StudentScoreScore": &StudentScoreScore{},
 }
@@ -60,7 +60,7 @@ func (s *StudentScoreSync) FindPrimaryTableByPForeignKey(i *dbtoes.Index) error 
 		},
 		Sort: make([]types.SortCombinations, 0),
 	}
-	typeResp, err := i.TypedESConn.Search().Index(StudentScoreIdx).Request(request).Size(5).From(0).Do(context.Background())
+	typeResp, err := i.TypedESConn.Search().Index(StudentScoreIdx1).Request(request).Size(5).From(0).Do(context.Background())
 	if err != nil {
 		panic(err)
 	}
@@ -73,7 +73,7 @@ func (s *StudentScoreSync) FindPrimaryTableByPForeignKey(i *dbtoes.Index) error 
 		panic(errorpkg.NewBizErrx(errorpkg.CodeFalse, "is not unique, fatal"))
 	}
 
-	var dataStruct StudentScoreUser
+	var dataStruct StudentScoreUser1
 	err = json.Unmarshal(typeResp.Hits.Hits[0].Source_, &dataStruct)
 	if err != nil {
 		panic(err)

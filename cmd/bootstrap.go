@@ -48,15 +48,14 @@ func RegistAll() (closers []func() error) {
 	return
 }
 
-func registerConfig() (err error) {
+func registerConfig() error {
 
 	// 读取 `.env` 文件的信息，存入配置文件的全局变量
-	if parseEnv() != nil {
-		return
+	if ParseEnv() != nil {
+		return nil
 	}
-
 	// RET
-	return
+	return nil
 }
 
 // ListenSignal 监听信号

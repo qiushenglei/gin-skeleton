@@ -6,8 +6,11 @@ import (
 	"fmt"
 	"github.com/elastic/go-elasticsearch/v8"
 	"github.com/qiushenglei/gin-skeleton/internal/app/configs"
+	"github.com/qiushenglei/gin-skeleton/internal/app/data/mysql/query"
 	"github.com/qiushenglei/gin-skeleton/internal/app/global/utils"
 	"github.com/qiushenglei/gin-skeleton/pkg/dbtoes"
+	"github.com/qiushenglei/gin-skeleton/pkg/logs"
+	"gorm.io/gorm/logger"
 	"net/http"
 	"time"
 
@@ -17,12 +20,11 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
-	"gorm.io/gorm/logger"
 )
 
 var (
 	// MySQL connections
-	MySQLSpecClient *gorm.DB
+	MySQLCanalTestClient *gorm.DB
 
 	// Redis connections
 	RedisClient *redis.Client
@@ -92,24 +94,33 @@ func RegisterMySQL() func() error {
 	}
 
 	// 建立 Mysql 连接
+	var err error
 	DBConfig := &gorm.Config{
-		Logger: logger.Default.LogMode(logger.Info),
+		//Logger: logger.Default.LogMode(logger.Info),
+		Logger: logger.New(
+			logs.Log, //将本地的logger日志注册
+			logger.Config{
+				Colorful:             true,
+				LogLevel:             logger.Info,
+				ParameterizedQueries: false, // false展示value值，true只展示sql ?占位符
+			}),
 	}
 	username := configs.EnvConfig.GetString("DB_SPEC_RW_USERNAME")
 	pw := configs.EnvConfig.GetString("DB_SPEC_RW_PASSWORD")
 	host := configs.EnvConfig.GetString("DB_SPEC_RW_HOST")
 	port := configs.EnvConfig.GetString("DB_SPEC_RW_PORT")
-	db := "testdb"
+	db := "canal_test"
 	dsn := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s?timeout=5s&readTimeout=5s&writeTimeout=1s&parseTime=true&loc=Local&charset=utf8mb4,utf8", username, pw, host, port, db)
-	MySQLSpecClient, err := gorm.Open(mysql.Open(dsn), DBConfig)
+	MySQLCanalTestClient, err = gorm.Open(mysql.Open(dsn), DBConfig)
 	if err != nil {
 		panic(err)
 	}
 	if configs.EnvConfig.GetString("RUN_MODE") == "DEBUG" {
-		MySQLSpecClient = MySQLSpecClient.Debug()
+		MySQLCanalTestClient = MySQLCanalTestClient.Debug()
 	}
 
-	rawdb, err := MySQLSpecClient.DB()
+	rawdb, err := MySQLCanalTestClient.DB()
+	query.SetDefault(MySQLCanalTestClient)
 	if err != nil {
 		panic(err)
 	}

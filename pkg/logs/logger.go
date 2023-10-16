@@ -19,6 +19,12 @@ func NewLogger(zapLogger *zap.SugaredLogger) *Logger {
 	return l
 }
 
+func (l *Logger) Printf(msg string, data ...interface{}) {
+
+	l.zapLogger.Info(msg)
+	l.zapLogger.Info(data...)
+}
+
 func (l *Logger) Error(ctx context.Context, args ...interface{}) {
 	args = l.addRequestID(ctx, args)
 	l.zapLogger.Error(args...)
@@ -26,7 +32,7 @@ func (l *Logger) Error(ctx context.Context, args ...interface{}) {
 
 func (l *Logger) Info(ctx context.Context, args ...interface{}) {
 	args = l.addRequestID(ctx, args)
-	l.zapLogger.Info(11)
+	l.zapLogger.Info(args)
 }
 
 func (l *Logger) Warn(ctx context.Context, args ...interface{}) {

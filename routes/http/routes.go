@@ -36,6 +36,12 @@ func RegisterRoutes() (r *gin.Engine) {
 		sampleAPI.POST("/get_key_value", controller.GetKeyValue) // 查询 Redis Key
 	}
 
+	// student
+	studentAPI := r.Group("/student/", middleware2.AuthRequest())
+	studentAPI.POST("/set_data", controller.SetData)      // 设置 Redis Key
+	studentAPI.POST("/get_data", controller.GetData)      // 查询 Redis Key
+	studentAPI.POST("/get_es_data", controller.GetESData) // 查询 Redis Key
+
 	// RET
 	return
 }

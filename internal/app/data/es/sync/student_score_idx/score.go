@@ -18,7 +18,7 @@ type StudentScoreScore struct {
 
 func (u *StudentScoreScore) Insert(i *dbtoes.Index) error {
 	// ES index原数据
-	originData, ok := i.PrimarySource.(*StudentScoreUser)
+	originData, ok := i.PrimarySource.(*StudentScoreUser1)
 	// 没有查找主表信息的，直接嘎
 	if ok == false {
 		panic(errorpkg.ErrLogic)
@@ -33,7 +33,7 @@ func (u *StudentScoreScore) Insert(i *dbtoes.Index) error {
 
 	originData.ScoreInfo = append(originData.ScoreInfo, &newData)
 
-	Resp, err := i.TypedESConn.Update(StudentScoreIdx, i.PrimaryID).Doc(originData).Do(context.Background())
+	Resp, err := i.TypedESConn.Update(StudentScoreIdx1, i.PrimaryID).Doc(originData).Do(context.Background())
 	if err != nil {
 		// TODO::这里根据业务补救，这不一一写了(直接panic出去，通过rocketmq的重试特性。重新消费)
 		panic(err)
@@ -45,7 +45,7 @@ func (u *StudentScoreScore) Insert(i *dbtoes.Index) error {
 
 func (u *StudentScoreScore) Update(i *dbtoes.Index) error {
 	// ES index原数据
-	originData, ok := i.PrimarySource.(*StudentScoreUser)
+	originData, ok := i.PrimarySource.(*StudentScoreUser1)
 	// 没有查找主表信息的，直接嘎
 	if ok == false {
 		panic(errorpkg.ErrLogic)
@@ -65,7 +65,7 @@ func (u *StudentScoreScore) Update(i *dbtoes.Index) error {
 		}
 	}
 
-	Resp, err := i.TypedESConn.Update(StudentScoreIdx, i.PrimaryID).Doc(originData).Do(context.Background())
+	Resp, err := i.TypedESConn.Update(StudentScoreIdx1, i.PrimaryID).Doc(originData).Do(context.Background())
 	if err != nil {
 		// TODO::这里根据业务补救，这不一一写了(直接panic出去，通过rocketmq的重试特性。重新消费)
 		panic(err)

@@ -8,7 +8,7 @@ import (
 	"github.com/qiushenglei/gin-skeleton/pkg/errorpkg"
 )
 
-type StudentScoreUser struct {
+type StudentScoreUser1 struct {
 	Id         int                  `json:"id,string"`
 	Username   string               `json:"username"`
 	Label      []string             `json:"label"`
@@ -21,18 +21,18 @@ type StudentScoreUser struct {
 	ScoreInfo  []*StudentScoreScore `json:"score_info"`
 }
 
-func (u *StudentScoreUser) Insert(i *dbtoes.Index) error {
+func (u *StudentScoreUser1) Insert(i *dbtoes.Index) error {
 
 	//处理特殊字段
 	data := u.handleSpecialFields(i)
 
 	// interface转成struct
-	var newData StudentScoreUser
+	var newData StudentScoreUser1
 
 	utils.Interface2Struct(data, &newData)
 
 	// 插入新document
-	Resp, err := i.TypedESConn.Index(StudentScoreIdx).Request(newData).Do(context.Background())
+	Resp, err := i.TypedESConn.Index(StudentScoreIdx1).Request(newData).Do(context.Background())
 	if err != nil {
 		// TODO::这里根据业务补救，这不一一写了(直接panic出去，通过rocketmq的重试特性。重新消费)
 		panic(err)
@@ -45,10 +45,10 @@ func (u *StudentScoreUser) Insert(i *dbtoes.Index) error {
 	return nil
 }
 
-func (u *StudentScoreUser) Update(i *dbtoes.Index) error {
+func (u *StudentScoreUser1) Update(i *dbtoes.Index) error {
 
 	// ES index原数据
-	originData, ok := i.PrimarySource.(*StudentScoreUser)
+	originData, ok := i.PrimarySource.(*StudentScoreUser1)
 	// 没有查找主表信息的，直接嘎
 	if ok == false {
 		panic(errorpkg.ErrLogic)
@@ -58,14 +58,14 @@ func (u *StudentScoreUser) Update(i *dbtoes.Index) error {
 	data := u.handleSpecialFields(i)
 
 	// interface转成struct
-	var newData StudentScoreUser
+	var newData StudentScoreUser1
 	utils.Interface2Struct(data, &newData)
 
 	// 将子表内容赋值
 	newData.ClassInfo = originData.ClassInfo
 	newData.ScoreInfo = originData.ScoreInfo
 
-	Resp, err := i.TypedESConn.Update(StudentScoreIdx, i.PrimaryID).Doc(newData).Do(context.Background())
+	Resp, err := i.TypedESConn.Update(StudentScoreIdx1, i.PrimaryID).Doc(newData).Do(context.Background())
 	if err != nil {
 		// TODO::这里根据业务补救，这不一一写了(直接panic出去，通过rocketmq的重试特性。重新消费)
 		panic(err)
@@ -75,7 +75,7 @@ func (u *StudentScoreUser) Update(i *dbtoes.Index) error {
 	return nil
 }
 
-func (u *StudentScoreUser) handleSpecialFields(i *dbtoes.Index) map[string]interface{} {
+func (u *StudentScoreUser1) handleSpecialFields(i *dbtoes.Index) map[string]interface{} {
 	// 获取data数据
 
 	var test []string
