@@ -50,7 +50,7 @@ func SetData(ctx *gin.Context, student *entity.StudentSetData) (interface{}, err
 		}
 
 		// set score
-		models.NewScores(student.ScoreInfo)
+		scores := models.NewScores(student.ScoreInfo)
 		tx.Score.WithContext(ctx).Clauses().CreateInBatches()
 
 		// set subject
