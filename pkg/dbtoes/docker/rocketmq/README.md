@@ -77,5 +77,11 @@ docker run -it --network dbtoes -v /f/go_code/gin-skeleton/pkg/dbtoes/docker/roc
 ./mqadmin consumerStatus -n 127.0.0.1:9876 -g OrderPayGroup
 # 手动添加信息到topic
 ./mqadmin sendMessage -n 127.0.0.1:9876 -t order -p "这里是手动添加" -c A -c B
+# 查看消息是否已经被消费过(ui界面都是写着未消费，其实有些已经消费)
+./mqadmin queryMsgByUniqueKey -n 127.0.0.1:9876  -t order -i C0A81FAC625C000000005834ead80001
+./mqadmin queryMsgByUniqueKey -n 127.0.0.1:9876  -t dbtoes1%dbtoes1 -i 7F0000010065384AD17B5797E8990001
+# 查看生产者
+./mqadmin producer -n 127.0.0.1:9876 -b 127.0.0.1:10909
+./mqadmin producerConnection -n 127.0.0.1:9876 -t dbtoes1%dbtoes1 -g dbtoes1%dbtoes1
 ```
 ```

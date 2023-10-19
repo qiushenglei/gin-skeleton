@@ -3,13 +3,15 @@ package services
 import (
 	"github.com/gin-gonic/gin"
 	"github.com/qiushenglei/gin-skeleton/internal/app/data"
+	"github.com/qiushenglei/gin-skeleton/internal/app/data/mysql/model"
 	"github.com/qiushenglei/gin-skeleton/internal/app/data/mysql/models"
 	"github.com/qiushenglei/gin-skeleton/internal/app/data/mysql/query"
 	"github.com/qiushenglei/gin-skeleton/internal/app/entity"
 	"gorm.io/gorm/clause"
 )
 
-func SetData(ctx *gin.Context, student *entity.StudentSetData) (interface{}, error) {
+func SetData(ctx *gin.Context, student *entity.StudentSetDataRequest) uint32 {
+	var user *model.User
 	q := query.Use(data.MySQLCanalTestClient)
 
 	q.Transaction(func(tx *query.Query) error {
@@ -24,12 +26,12 @@ func SetData(ctx *gin.Context, student *entity.StudentSetData) (interface{}, err
 				DoUpdates: clause.AssignmentColumns([]string{"class_name", "grade", "update_time"}),
 			},
 		).Create(class); err != nil {
-			return err
+			panic(err)
 		}
 		student.ClassId = int(class.ID)
 
 		// set user
-		user := models.NewUser(student)
+		user = models.NewUser(student)
 		err := tx.User.Table("user").WithContext(ctx).Clauses(clause.OnConflict{
 			// 如果id冲突就执行 on duplicate key update 后面的字段
 			Columns: []clause.Column{
@@ -46,29 +48,72 @@ func SetData(ctx *gin.Context, student *entity.StudentSetData) (interface{}, err
 			}),
 		}).Create(user) //这里用save方法都不行，必须是create
 		if err != nil {
-			return err
+			panic(err)
+		}
+
+		// set Subject
+		subject := models.NewSubject(student)
+		err = tx.Subject.WithContext(ctx).Clauses(clause.OnConflict{
+			Columns: []clause.Column{
+				clause.Column{
+					Name: "id",
+				},
+			},
+			DoUpdates: clause.AssignmentColumns([]string{"subject_name"}),
+		}).CreateInBatches(subject, len(subject))
+		if err != nil {
+			panic(err)
 		}
 
 		// set score
-		scores := models.NewScores(student.ScoreInfo)
-		tx.Score.WithContext(ctx).Clauses().CreateInBatches()
-
-		// set subject
+		scores := models.NewScores(student.ScoreInfo, subject, student.StudentId)
+		if err := tx.Score.WithContext(ctx).Clauses(clause.OnConflict{
+			Columns: []clause.Column{
+				{Name: "id"},
+			},
+			DoUpdates: clause.AssignmentColumns([]string{"student_id", "subject_id", "score", "update_time"}),
+		}).CreateInBatches(scores, len(scores)); err != nil {
+			panic(err)
+		}
 		return nil
 	})
-	// set Class model
 
-	// set User
-	//_, err := model.SetData(ctx, student)
-	//
-	//if err != nil {
-	//	tx.Rollback()
-	//	return nil, nil
-	//}
+	return user.ID
+}
 
-	// set score model
+func GetData(c *gin.Context, cond *entity.SearchCond) {
+	// get user
+	GetUserData(c, cond)
 
-	// set Subject model
+	// get other
+}
 
-	return nil, nil
+func GetUserData(c *gin.Context, cond *entity.SearchCond) ([]*model.User, error) {
+	q := query.Q.User.Table("user").WithContext(c)
+
+	// class cond
+	class, err := models.GetClassBySearchCond(c, cond)
+	if err != nil {
+		// 没有满足条件的数据
+	} else if class != nil {
+		q = q.Where(query.Q.User.ClassID.Eq(class.ID))
+	}
+
+	// score cond
+	scores, err := models.GetScoreBySearchCond(c, cond)
+	if err != nil {
+		// 没有满足条件的数据
+		return nil, err
+	} else if len(scores) > 0 {
+		var studentIds []string
+		for _, v := range scores {
+			studentIds = append(studentIds, v.StudentID)
+		}
+		q = q.Where(query.Q.User.StudentID.In(studentIds...))
+	}
+	var users []*model.User
+	if err := q.Scan(&users); err != nil {
+		panic(err)
+	}
+	return users, nil
 }

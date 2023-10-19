@@ -9,20 +9,22 @@ import (
 
 const (
 	// 订阅事件名
-	DBToESEvent       rocketpkg.EventName = "DBToESEvent"
-	OrderPayEvent     rocketpkg.EventName = "OrderPayEvent"     // 订单支付事件
-	OrderSuccessEvent rocketpkg.EventName = "OrderSuccessEvent" // 订单完成事件
+	DBToESEvent           rocketpkg.EventName = "DBToESEvent"
+	OrderPayEvent         rocketpkg.EventName = "OrderPayEvent"     // 订单支付事件
+	OrderAutoSuccessEvent rocketpkg.EventName = "OrderSuccessEvent" // 订单自动完成
 
 	// 主题topic
-	OrderTopic  string = "order"
-	DBToESTopic string = "dbtoes"
+	OrderTopic      string = "order"
+	DBToESTopic     string = "dbtoes1"
+	OrderDelayTopic string = "order_delay"
 
 	// 消费者组名
-	OrderPayGroup    string = "OrderPayGroup"
-	CanalSyncESGroup string = "CanalSyncESGroup"
+	OrderPayGroup         string = "OrderPayGroup"
+	CanalSyncESGroup      string = "CanalSyncESGroup1"
+	OrderAutoSuccessGroup string = "OrderAutoSuccessGroup"
 
-	// topic所输namespace，不同namespace下可以同名topic
-	SyncData string = "dbtoes"
+	// topic的enamespace，不同namespace下可以同名topic
+	SyncDataNameSpace string = "dbtoes1"
 )
 
 var (
@@ -40,10 +42,19 @@ var (
 			EventName:          DBToESEvent,
 			Topic:              DBToESTopic,
 			Tags:               []string{},
-			NameSpace:          SyncData,
+			ConsumerNameSpace:  SyncDataNameSpace,
 			ConsumerNum:        4,
 			ConsumerGroupName:  CanalSyncESGroup,
 			ConsumerHandleFunc: CanalSyncESHandle,
+		},
+		OrderAutoSuccessEvent: rocketpkg.Event{
+			EventName:          OrderAutoSuccessEvent,
+			Topic:              OrderDelayTopic,
+			Tags:               []string{"AutoSuccess"},
+			ProducerGroup:      string(OrderAutoSuccessEvent),
+			ConsumerNum:        4,
+			ConsumerGroupName:  OrderAutoSuccessGroup,
+			ConsumerHandleFunc: DelayHandle,
 		},
 	}
 
@@ -52,10 +63,13 @@ var (
 )
 
 func RegisterRocketMQProducer() error {
-	Producer = products.NewPkgProducer(EventMap)
-	// 测试发送
-	err := Producer.SendMsg(context.Background(), OrderPayEvent, []int{1, 2, 3})
-
+	Producer = products.NewPkgProducer(EventMap, "productAction")
+	// 测试普通消息发送
+	var err error
+	for i := 0; i < 1; i++ {
+		err = Producer.SyncSendMsg(context.Background(), OrderPayEvent, "这里是测试", nil)
+		err = Producer.SyncSendMsg(context.Background(), OrderAutoSuccessEvent, "这里是延时测试", &rocketpkg.Delay{Expire: 60})
+	}
 	return err
 }
 

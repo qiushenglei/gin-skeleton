@@ -8,8 +8,11 @@ import (
 	"github.com/apache/rocketmq-client-go/v2/primitive"
 	"github.com/qiushenglei/gin-skeleton/internal/app/configs"
 	"github.com/qiushenglei/gin-skeleton/internal/app/global/utils"
+	"github.com/qiushenglei/gin-skeleton/pkg/errorpkg"
 	"github.com/qiushenglei/gin-skeleton/pkg/logs"
 	"github.com/qiushenglei/gin-skeleton/pkg/rocketpkg"
+	"github.com/qiushenglei/gin-skeleton/pkg/rocketpkg/products"
+	"go.uber.org/zap"
 	"golang.org/x/net/context"
 	"log"
 	"strconv"
@@ -18,13 +21,22 @@ import (
 )
 
 type RocketMQConsumers struct {
-	ef rocketpkg.EventConf // 私有rocket的事件配置map
+	ef         rocketpkg.EventConf                   // 私有rocket的事件配置map
+	productMap map[string]*products.RocketMQProducer // 延时队列重新发布使用,可能有多个，这里只默认了一个，以后在加吧
 }
 
 // NewConsumers 创建消费结构体
 func NewConsumers(ef rocketpkg.EventConf) *RocketMQConsumers {
-	return &RocketMQConsumers{
-		ef: ef,
+	c := &RocketMQConsumers{
+		ef:         ef,
+		productMap: InitProductMap(ef),
+	}
+	return c
+}
+
+func InitProductMap(ef rocketpkg.EventConf) map[string]*products.RocketMQProducer {
+	return map[string]*products.RocketMQProducer{
+		"default": products.NewPkgProducer(ef, "DelayConsumerAction"),
 	}
 }
 
@@ -89,10 +101,13 @@ func (c *RocketMQConsumers) newPushConsumers(e rocketpkg.Event, serialNumber int
 	host := fmt.Sprintf("%s:%s", configs.EnvConfig.GetString("ROCKETMQ_TEST_HOST"), configs.EnvConfig.GetString("ROCKETMQ_TEST_PORT"))
 	consumer, err := rocketmq.NewPushConsumer(
 		consumer2.WithGroupName(e.ConsumerGroupName), //指定消费者组
-		consumer2.WithNamespace(e.NameSpace),
+		consumer2.WithNamespace(e.ConsumerNameSpace),
 		consumer2.WithInstance(e.ConsumerGroupName+strconv.Itoa(serialNumber)),     //同一消费者组的不同消费者标识，不加上会有问题
 		consumer2.WithNsResolver(primitive.NewPassthroughResolver([]string{host})), //服务ip
-		consumer2.WithRetry(5),                                                     // 重试次数
+		consumer2.WithRetry(5),                                          // 重试次数
+		consumer2.WithConsumerModel(consumer2.Clustering),               // 消息粒度负载均衡
+		consumer2.WithConsumeFromWhere(consumer2.ConsumeFromLastOffset), // 从最后的offset开始消费
+		consumer2.WithStrategy(consumer2.AllocateByAveragely),           // 平均消费
 	)
 
 	if err != nil {
@@ -107,23 +122,79 @@ func (c *RocketMQConsumers) newPushConsumers(e rocketpkg.Event, serialNumber int
 
 	// 订阅
 	err = consumer.Subscribe(e.Topic, selector, func(ctx context.Context, ext ...*primitive.MessageExt) (consumer2.ConsumeResult, error) {
-		// 接住panic，做重试或者其他任务
-		defer func() {
-			if r := recover(); r != nil {
-				log.Println(r)
-				// TODO::重试或者结束
+		// 让err逃逸，是因为recover到了panic是没有返回值的， 所以要在recover将err变成非nil ，能够重试消费
+		var err error
+		var res consumer2.ConsumeResult
+
+		// 执行闭包函数
+		res, _ = func() (consumer2.ConsumeResult, error) {
+			// 接住panic，做重试或者其他任务
+			defer func() {
+				if r := recover(); r != nil {
+					log.Println(r)
+					if v, ok := r.(error); ok {
+						err = v
+					} else {
+						err = errorpkg.NewBizErrx(errorpkg.CodeFalse, "consume msg panic")
+					}
+				}
+			}()
+
+			// 目前只处理了只有一个消息的情况
+			msg := ext[0]
+
+			// 打个消费开始日志
+			logs.Log.Info(ctx,
+				zap.String("Topic", e.Topic),
+				zap.String("MsgID", msg.MsgId),
+				msg.Message.GetProperty("CONSUME_START_TIME"),
+				"consumer start",
+			)
+
+			// 延时队列处理
+			expire := msg.GetProperty(rocketpkg.Expire)
+			expireInt, _ := strconv.Atoi(expire)
+			if expire != "" && expireInt > 0 {
+				// 重新投递
+				err := c.redeliver(ctx, e, msg)
+				if err != nil {
+					return consumer2.ConsumeRetryLater, err
+				}
+				logs.Log.Info(ctx,
+					zap.String("Topic", e.Topic),
+					zap.String("MsgID", msg.MsgId),
+					"consumer redeliver",
+				)
+				return consumer2.ConsumeSuccess, nil
 			}
+
+			// 业务处理
+			err = e.ConsumerHandleFunc(ctx, msg)
+			if err != nil {
+				// TODO 给log加上各种服务文件类型，目前只有web的
+				logs.Log.Info(ctx,
+					zap.String("Topic", e.Topic),
+					zap.String("MsgID", msg.MsgId),
+					"consumer retry",
+				)
+				return consumer2.ConsumeRetryLater, err
+			}
+
+			// 打个消费成功日志
+			logs.Log.Info(ctx,
+				zap.String("Topic", e.Topic),
+				zap.String("MsgID", msg.MsgId),
+				"consumer success",
+			)
+			return consumer2.ConsumeSuccess, nil
 		}()
 
-		// 目前只处理了只有一个消息的情况
-		err := e.ConsumerHandleFunc(ctx, ext[0])
+		// err重试
 		if err != nil {
-			// TODO 给log加上各种服务文件类型，目前只有web的
-			logs.Log.Error(ctx)
 			return consumer2.ConsumeRetryLater, err
 		}
 
-		return consumer2.ConsumeSuccess, nil
+		return res, err
 	})
 
 	if err != nil {

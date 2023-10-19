@@ -8,7 +8,7 @@ import (
 	"time"
 )
 
-func NewUser(student *entity.StudentSetData) *model.User {
+func NewUser(student *entity.StudentSetDataRequest) *model.User {
 	label, _ := json.Marshal(student.Label)
 	if student.StudentId == "" {
 		student.StudentId = utils.GenerateUniqueNumberBySnowFlake()

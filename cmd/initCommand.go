@@ -68,7 +68,7 @@ func HttpServerPersistentPreRun(cmd *cobra.Command, args []string) {
 
 func RunHttpServer(cmd *cobra.Command, args []string) {
 	// 注册除了路由以外的所有东西
-	closers := RegistAll()
+	closers := RegistAll(cmd.Use)
 
 	// 设置gin运行模式
 	gin.SetMode(configs.AppRunMode)
@@ -99,7 +99,7 @@ func RunHttpServer(cmd *cobra.Command, args []string) {
 
 func RunCrontab(cmd *cobra.Command, args []string) {
 	// 注册除了路由以外的所有东西
-	closers := RegistAll()
+	closers := RegistAll(cmd.Use)
 
 	// crontab
 	c := cron.New()
@@ -127,7 +127,7 @@ func RunCrontab(cmd *cobra.Command, args []string) {
 
 func RunRocketMQ(cmd *cobra.Command, args []string) {
 	// 注册除了路由以外的所有东西
-	closers := RegistAll()
+	closers := RegistAll(cmd.Use)
 
 	localrocket.RegisterRocketMQConsumer()
 

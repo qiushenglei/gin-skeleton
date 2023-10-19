@@ -20,8 +20,8 @@ func RegisterRoutes() (r *gin.Engine) {
 	//r.Use(cors.CORS())       // 跨域中间件
 	//r.Use(logging.Logging()) // 日志中间件
 	r.Use(middleware2.BindRequestID()) // 请求ID
-	r.Use(middleware2.GlobalRecover()) // 全局recover
 	r.Use(middleware2.LogRequest())    // 记录请求信息
+	r.Use(middleware2.GlobalRecover()) // 全局recover,抛出异常也需要记录请求日志，所以放后面
 
 	// 探针
 	r.GET("/", func(ctx *gin.Context) { ctx.String(http.StatusOK, "Hello, this is Gin-Awesome! ") })
@@ -41,6 +41,7 @@ func RegisterRoutes() (r *gin.Engine) {
 	studentAPI.POST("/set_data", controller.SetData)      // 设置 Redis Key
 	studentAPI.POST("/get_data", controller.GetData)      // 查询 Redis Key
 	studentAPI.POST("/get_es_data", controller.GetESData) // 查询 Redis Key
+	studentAPI.POST("/delay_msg", controller.Delay)       // 查询 Redis Key
 
 	// RET
 	return

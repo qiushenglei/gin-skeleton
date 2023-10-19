@@ -24,7 +24,7 @@ type TableSync interface {
 }
 
 var tableMap = map[string]TableSync{
-	"StudentScoreUser1": &StudentScoreUser1{},
+	"StudentScoreUser":  &StudentScoreUser{},
 	"StudentScoreClass": &StudentScoreClass{},
 	"StudentScoreScore": &StudentScoreScore{},
 }
@@ -73,7 +73,7 @@ func (s *StudentScoreSync) FindPrimaryTableByPForeignKey(i *dbtoes.Index) error 
 		panic(errorpkg.NewBizErrx(errorpkg.CodeFalse, "is not unique, fatal"))
 	}
 
-	var dataStruct StudentScoreUser1
+	var dataStruct StudentScoreUser
 	err = json.Unmarshal(typeResp.Hits.Hits[0].Source_, &dataStruct)
 	if err != nil {
 		panic(err)

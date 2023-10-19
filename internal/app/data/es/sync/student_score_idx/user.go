@@ -8,7 +8,7 @@ import (
 	"github.com/qiushenglei/gin-skeleton/pkg/errorpkg"
 )
 
-type StudentScoreUser1 struct {
+type StudentScoreUser struct {
 	Id         int                  `json:"id,string"`
 	Username   string               `json:"username"`
 	Label      []string             `json:"label"`
@@ -21,13 +21,13 @@ type StudentScoreUser1 struct {
 	ScoreInfo  []*StudentScoreScore `json:"score_info"`
 }
 
-func (u *StudentScoreUser1) Insert(i *dbtoes.Index) error {
+func (u *StudentScoreUser) Insert(i *dbtoes.Index) error {
 
 	//处理特殊字段
 	data := u.handleSpecialFields(i)
 
 	// interface转成struct
-	var newData StudentScoreUser1
+	var newData StudentScoreUser
 
 	utils.Interface2Struct(data, &newData)
 
@@ -45,10 +45,10 @@ func (u *StudentScoreUser1) Insert(i *dbtoes.Index) error {
 	return nil
 }
 
-func (u *StudentScoreUser1) Update(i *dbtoes.Index) error {
+func (u *StudentScoreUser) Update(i *dbtoes.Index) error {
 
 	// ES index原数据
-	originData, ok := i.PrimarySource.(*StudentScoreUser1)
+	originData, ok := i.PrimarySource.(*StudentScoreUser)
 	// 没有查找主表信息的，直接嘎
 	if ok == false {
 		panic(errorpkg.ErrLogic)
@@ -58,7 +58,7 @@ func (u *StudentScoreUser1) Update(i *dbtoes.Index) error {
 	data := u.handleSpecialFields(i)
 
 	// interface转成struct
-	var newData StudentScoreUser1
+	var newData StudentScoreUser
 	utils.Interface2Struct(data, &newData)
 
 	// 将子表内容赋值
@@ -75,7 +75,7 @@ func (u *StudentScoreUser1) Update(i *dbtoes.Index) error {
 	return nil
 }
 
-func (u *StudentScoreUser1) handleSpecialFields(i *dbtoes.Index) map[string]interface{} {
+func (u *StudentScoreUser) handleSpecialFields(i *dbtoes.Index) map[string]interface{} {
 	// 获取data数据
 
 	var test []string

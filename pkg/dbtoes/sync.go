@@ -167,7 +167,7 @@ func isMatch(tablePattern string, tableName string) bool {
 	return false
 }
 
-func (i *Index) proc() {
+func (i *Index) proc() error {
 	// 首字符大写
 	name := cases.Title(language.Und).String(strings.ToLower(i.SQLType))
 
@@ -177,26 +177,41 @@ func (i *Index) proc() {
 		param := []reflect.Value{
 			//reflect.ValueOf(111),
 		}
-		v.Call(param)
+		res := v.Call(param)
+		if v, ok := res[0].Interface().(error); ok {
+			return v
+		}
 	} else {
 		logs.Log.Info(context.Background(), "no proc")
 	}
+	return nil
 }
 
 func (i *Index) Update() {
+	var isPrint bool
 	// es查询主表内容,如果没有主表document，挂起goroutine,等待主表插入后执行(sleep，不能使用chan因为是分布式系统)
 	for {
 		// 查主表信息，找到es的doc_id,用于后续更新doc。没有查到主表信息，则loop等待其他协程同步主表信息到es
 		if err := i.sync.FindPrimaryTableByPForeignKey(i); err != nil {
-			//
 			if v, ok := err.(errorpkg.Errx); ok && v.Code() == CodeSyncNoLoop {
 				return
 			}
+			// 主表查不到，直接插入new doc
+			if i.IsPrimaryTable {
+				i.sync.InsertSync(i)
+				return
+			}
 			time.Sleep(2 * time.Second)
+			if !isPrint {
+				logs.Log.Info(context.Background(), "卡住了")
+				isPrint = true
+			}
 			continue
+
 		} else {
 			break
 		}
+
 	}
 
 	i.sync.UpdateSync(i)
@@ -205,10 +220,6 @@ func (i *Index) Update() {
 func (i *Index) Insert() {
 	// es查询主表内容,如果没有主表document，挂起goroutine,等待主表插入后执行(sleep，不能使用chan因为是分布式系统)
 	for {
-		// 是主表insert，直接同步到es
-		if i.IsPrimaryTable {
-			break
-		}
 
 		// 非主表，查主表信息，找到es的doc_id,用于后续更新doc
 		// 没有查到主表信息，则loop等待其他协程同步主表信息到es
@@ -217,7 +228,13 @@ func (i *Index) Insert() {
 			if v, ok := err.(errorpkg.Errx); ok && v.Code() == CodeSyncNoLoop {
 				return
 			}
+			// 如果主表已经有了，但是重复消费，就需要是更改(或者用业务时间去判断，我这里不用业务判断了)
+			if i.IsPrimaryTable && i.PrimaryID != "" {
+				i.sync.UpdateSync(i)
+				return
+			}
 			time.Sleep(2 * time.Second)
+
 			continue
 		} else {
 			break

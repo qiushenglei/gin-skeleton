@@ -155,16 +155,16 @@ func (s *StudentScoreIdxSearch) searchScoreCond(cond *entity.SearchCond) []*type
 	}
 	query := make([]*types.Query, 2)
 	query[] = &types.Query{
-		Terms: &types.TermsQuery{
-			TermsQuery: map[string]types.TermsQueryField{
-				"score_info.subject_info.subject_name.keyword": cond.ScoreCond.SubjectName, //subject_name是text类型，因为这里需要精准查询，所以es的index/mapping中给找个字段加了keyword类型的子字段并取名名为keyword
+		Term: map[string]types.TermQuery{
+			"score_info.subject_info.subject_name.keyword": types.TermQuery{ //subject_name是text类型，因为这里需要精准查询，所以es的index/mapping中给找个字段加了keyword类型的子字段并取名名为keyword
+				Value: cond.ScoreCond.SubjectName,
 			},
 		},
 	}
 	query[] = &types.Query{
-		Terms: &types.TermsQuery{
-			TermsQuery: map[string]types.TermsQueryField{
-				"label": cond.Label,
+		Term: map[string]types.TermQuery{
+			"score_info.score": types.TermQuery{ //score分数，也需要精准匹配，map定义的是long
+				Value: cond.ScoreCond.Score,
 			},
 		},
 	}

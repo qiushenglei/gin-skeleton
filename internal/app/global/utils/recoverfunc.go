@@ -8,19 +8,18 @@ import (
 
 // Go 封装的go程，不用每次都手写panic
 func Go(ctx context.Context, handle func(ctx context.Context), rh func(r interface{})) {
-	p := func() {
-		if r := recover(); r != nil {
-			if rh == nil {
-				return
-			}
-			Go(ctx, func(_ context.Context) {
-				rh(r)
-			}, nil)
-		}
-	}
+	//p := func() {
+	//	if r := recover(); r != nil {
+	//		if rh == nil {
+	//		}
+	//		Go(ctx, func(_ context.Context) {
+	//			rh(r)
+	//		}, nil)
+	//	}
+	//}
 
 	go func() {
-		defer p()
+		defer DefaultDefer(ctx)
 		handle(ctx)
 	}()
 }
@@ -32,4 +31,8 @@ func DefaultDefer(ctx context.Context) {
 			logs.Log.Error(ctx, zap.String("recover err", v.Error()))
 		}
 	}
+}
+
+func DefaultRh(r interface{}) {
+
 }

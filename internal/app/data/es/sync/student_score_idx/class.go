@@ -17,7 +17,7 @@ type StudentScoreClass struct {
 
 func (u *StudentScoreClass) Insert(i *dbtoes.Index) error {
 	// ES index原数据
-	originData, ok := i.PrimarySource.(*StudentScoreUser1)
+	originData, ok := i.PrimarySource.(*StudentScoreUser)
 	// 没有查找主表信息的，直接嘎
 	if ok == false {
 		panic(errorpkg.ErrLogic)
@@ -44,7 +44,7 @@ func (u *StudentScoreClass) Insert(i *dbtoes.Index) error {
 
 func (u *StudentScoreClass) Update(i *dbtoes.Index) error {
 	// ES index原数据
-	originData, ok := i.PrimarySource.(*StudentScoreUser1)
+	originData, ok := i.PrimarySource.(*StudentScoreUser)
 	// 没有查找主表信息的，直接嘎
 	if ok == false {
 		panic(errorpkg.ErrLogic)

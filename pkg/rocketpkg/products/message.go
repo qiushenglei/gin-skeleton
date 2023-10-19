@@ -7,6 +7,7 @@ import (
 	"github.com/apache/rocketmq-client-go/v2"
 	"github.com/apache/rocketmq-client-go/v2/primitive"
 	"github.com/qiushenglei/gin-skeleton/pkg/rocketpkg"
+	"strconv"
 )
 
 // newRocketMQProducer 创建私有包rocketmq的生产者
@@ -27,7 +28,7 @@ func (p *RocketMQProducer) getEvent(e rocketpkg.EventName) (event rocketpkg.Even
 }
 
 // NewMessage 从事件配置map中获取配置，创建rocket消息并指定topic 和 tags
-func (p *RocketMQProducer) NewMessage(ctx context.Context, en rocketpkg.EventName, data any) *primitive.Message {
+func (p *RocketMQProducer) NewMessage(ctx context.Context, en rocketpkg.EventName, data any, delay *rocketpkg.Delay) *primitive.Message {
 	// 获取event的配置信息
 	eventInfo, err := rocketpkg.GetEvent(p.ef, en)
 	if err != nil {
@@ -42,6 +43,14 @@ func (p *RocketMQProducer) NewMessage(ctx context.Context, en rocketpkg.EventNam
 
 	// 创建Msg
 	msg := primitive.NewMessage(eventInfo.Topic, b)
+
+	// 延时信息处理
+	if delay != nil && delay.Expire > 0 {
+		expire, level := rocketpkg.HandleDelayExpire(delay)
+		msg.WithProperty(rocketpkg.Expire, strconv.Itoa(expire))
+		msg.WithProperty("EventName", string(en))
+		msg.WithDelayTimeLevel(level)
+	}
 
 	// 添加tag
 	for _, v := range eventInfo.Tags {

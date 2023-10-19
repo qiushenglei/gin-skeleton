@@ -121,12 +121,14 @@ func getLogWriter(filePath, fileext string) (zapcore.WriteSyncer, error) {
 
 // 日志文件切割，按天
 func getWriter(filename, fileext string) (io.Writer, error) {
+	location, _ := time.LoadLocation("Asia/Shanghai")
 	// 保存30天内的日志，每24小时(整点)分割一次日志
 	hook, err := rotatelogs.New(
 		filename+"_%Y%m%d."+fileext,
 		rotatelogs.WithLinkName(filename),
 		rotatelogs.WithMaxAge(time.Hour*24*30),
 		rotatelogs.WithRotationTime(time.Hour*24),
+		rotatelogs.WithLocation(location), //设置成东8区，保证0点后更新日志
 	)
 	if err != nil {
 		//panic(err)

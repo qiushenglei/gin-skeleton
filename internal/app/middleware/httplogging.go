@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"github.com/gin-gonic/gin"
+	"github.com/qiushenglei/gin-skeleton/internal/app/global/utils"
 	"github.com/qiushenglei/gin-skeleton/pkg/logs"
 	"go.uber.org/zap"
 	"io"
@@ -57,9 +58,12 @@ func LogRequest() gin.HandlerFunc {
 		c.Writer = logWriter
 		c.Next()
 
+		var rb map[string]interface{}
+		// requestBody内容里有tab和\r\n,可以用jsondecode和encode过滤掉
+		requestBodyBytes := utils.JsonBytes2String(requestBody, &rb)
 		logs.Log.Info(
 			c,
-			zap.String("requestBody", string(requestBody)),
+			zap.Any("requestBody", string(requestBodyBytes)),
 			zap.String("responseBody", logWriter.responseBody.String()),
 		)
 	}

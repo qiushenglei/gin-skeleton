@@ -4,7 +4,7 @@ import (
 	"github.com/qiushenglei/gin-skeleton/pkg/localtime"
 )
 
-type StudentSetData struct {
+type StudentSetDataRequest struct {
 	Id         int                  `json:"id"`
 	Username   string               `json:"username" validate:"required,gte=1,lte=5"`
 	Label      []string             `json:"label" validate:"gte=0,lte=3"`
@@ -15,6 +15,10 @@ type StudentSetData struct {
 	IsDeleted  int                  `json:"is_deleted" validate:"oneof=0 1"`
 	ClassInfo  *ClassInfo           `json:"class_info" validate:"required" `
 	ScoreInfo  []*Score             `json:"score_info"`
+}
+
+type StudentSetDataResponse struct {
+	Id int `json:"id"`
 }
 
 type ClassInfo struct {
@@ -54,4 +58,9 @@ type SearchCond struct {
 type ScoreCond struct {
 	SubjectName string `json:"subject_name"`
 	Score       *int   `json:"score"` //可能查询0分的同学
+}
+
+type DelayRequest struct {
+	Expire  int    `json:"expire"`
+	Content string `json:"content"`
 }

@@ -12,7 +12,7 @@ import (
 )
 
 // RegistAll regists everything (Configs, Loggers, Data Connections, etc.) but the routes
-func RegistAll() (closers []func() error) {
+func RegistAll(serverName string) (closers []func() error) {
 
 	// 注册 配置文件
 	err := registerConfig()
@@ -36,7 +36,7 @@ func RegistAll() (closers []func() error) {
 	closers = append(closers, dataClosers...)
 
 	// 注册 MQ product
-	err = mq.RegisterMQ()
+	err = mq.RegisterMQ(serverName)
 	if err != nil {
 		panic("Failed to regist rocketMQ Producer: " + err.Error())
 	}

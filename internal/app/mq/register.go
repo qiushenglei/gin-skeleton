@@ -9,9 +9,13 @@ import (
 // RocketProduct rocketmq消费者
 var RocketProduct rocketmq.Producer
 
-func RegisterMQ() error {
+func RegisterMQ(serverName string) error {
 	isRegister := configs.EnvConfig.GetInt("REGISTER_MQ")
 	if isRegister == 0 {
+		return nil
+	}
+
+	if serverName == "rocketmq" {
 		return nil
 	}
 
