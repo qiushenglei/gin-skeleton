@@ -6,11 +6,15 @@ import (
 	"fmt"
 	"github.com/elastic/go-elasticsearch/v8"
 	"github.com/qiushenglei/gin-skeleton/internal/app/configs"
-	"github.com/qiushenglei/gin-skeleton/internal/app/data/mysql/query"
+	"github.com/qiushenglei/gin-skeleton/internal/app/data/mysql/canal_test/query"
+	isolateModel "github.com/qiushenglei/gin-skeleton/internal/app/data/mysql/rw_isolate/model"
+	isolateQuery "github.com/qiushenglei/gin-skeleton/internal/app/data/mysql/rw_isolate/query"
+
 	"github.com/qiushenglei/gin-skeleton/internal/app/global/utils"
 	"github.com/qiushenglei/gin-skeleton/pkg/dbtoes"
 	"github.com/qiushenglei/gin-skeleton/pkg/logs"
 	"gorm.io/gorm/logger"
+	"gorm.io/plugin/dbresolver"
 	"net/http"
 	"time"
 
@@ -25,6 +29,7 @@ import (
 var (
 	// MySQL connections
 	MySQLCanalTestClient *gorm.DB
+	MySQLIsolateClient   *gorm.DB
 
 	// Redis connections
 	RedisClient *redis.Client
@@ -93,17 +98,20 @@ func RegisterMySQL() func() error {
 		return nil
 	}
 
-	// 建立 Mysql 连接
+	// mysql logger
+	mysqlLogger := logger.New(
+		logs.Log, //将本地的logger日志注册
+		logger.Config{
+			Colorful:             true,
+			LogLevel:             logger.Info,
+			ParameterizedQueries: false, // false展示value值，true只展示sql ?占位符
+		})
+
+	// 建立 cancel_test Mysql 连接
 	var err error
 	DBConfig := &gorm.Config{
 		//Logger: logger.Default.LogMode(logger.Info),
-		Logger: logger.New(
-			logs.Log, //将本地的logger日志注册
-			logger.Config{
-				Colorful:             true,
-				LogLevel:             logger.Info,
-				ParameterizedQueries: false, // false展示value值，true只展示sql ?占位符
-			}),
+		Logger: mysqlLogger,
 	}
 	username := configs.EnvConfig.GetString("DB_SPEC_RW_USERNAME")
 	pw := configs.EnvConfig.GetString("DB_SPEC_RW_PASSWORD")
@@ -120,10 +128,40 @@ func RegisterMySQL() func() error {
 	}
 
 	rawdb, err := MySQLCanalTestClient.DB()
-	query.SetDefault(MySQLCanalTestClient)
 	if err != nil {
 		panic(err)
 	}
+
+	// rw_isolate 读写分离库
+	db1 := "rw_isolate"
+	WriteHost := configs.EnvConfig.GetString("DB_CANAL_WRITE_HOST")
+	WritePort := configs.EnvConfig.GetString("DB_CANAL_WRITE_PORT")
+	ReadHost1 := configs.EnvConfig.GetString("DB_CANAL_READ1_HOST")
+	ReadPort1 := configs.EnvConfig.GetString("DB_CANAL_READ1_PORT")
+	ReadHost2 := configs.EnvConfig.GetString("DB_CANAL_READ2_HOST")
+	ReadPort2 := configs.EnvConfig.GetString("DB_CANAL_READ2_PORT")
+	WriteDSN := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s?timeout=5s&readTimeout=5s&writeTimeout=1s&parseTime=true&loc=Local&charset=utf8mb4,utf8", username, pw, WriteHost, WritePort, db1)
+	Read1DSN := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s?timeout=5s&readTimeout=5s&writeTimeout=1s&parseTime=true&loc=Local&charset=utf8mb4,utf8", username, pw, ReadHost1, ReadPort1, db1)
+	Read2DSN := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s?timeout=5s&readTimeout=5s&writeTimeout=1s&parseTime=true&loc=Local&charset=utf8mb4,utf8", username, pw, ReadHost2, ReadPort2, db1)
+	MySQLIsolateClient, err = gorm.Open(mysql.Open(WriteDSN), DBConfig)
+	MySQLIsolateClient.Use(
+		dbresolver.Register( //
+			dbresolver.Config{
+				Sources:  []gorm.Dialector{mysql.Open(WriteDSN)},
+				Replicas: []gorm.Dialector{mysql.Open(Read1DSN), mysql.Open(Read2DSN)},
+			},
+			isolateModel.Order1{}, "order2", //order是分表的 order1 和 order2 可以去从库1，2读取数据
+		).Register(
+			dbresolver.Config{
+				Sources:  []gorm.Dialector{mysql.Open(WriteDSN)},
+				Replicas: []gorm.Dialector{mysql.Open(Read2DSN)},
+			},
+			"order3", "order4", //order是分表的 order3 和 order3 只可以去从库2读取数据
+		))
+
+	// 注册gorm generate model
+	query.SetDefault(MySQLCanalTestClient)
+	isolateQuery.SetDefault(MySQLIsolateClient)
 	return rawdb.Close
 }
 

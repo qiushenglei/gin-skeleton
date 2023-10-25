@@ -3,6 +3,7 @@ package validatorx
 import (
 	"context"
 	"github.com/gin-gonic/gin"
+	"github.com/gin-gonic/gin/binding"
 	"github.com/go-playground/validator/v10"
 	"github.com/qiushenglei/gin-skeleton/pkg/errorpkg"
 )
@@ -15,7 +16,7 @@ func Validate(ctx context.Context, body interface{}) error {
 	}
 
 	// 绑定struct
-	err := c.ShouldBind(body)
+	err := c.ShouldBindBodyWith(body, binding.JSON)
 	if err != nil {
 		return errorpkg.NewBizErrx(errorpkg.CodeBodyBind, err.Error())
 	}

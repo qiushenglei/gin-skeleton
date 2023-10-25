@@ -2,8 +2,8 @@ package models
 
 import (
 	"github.com/gin-gonic/gin"
-	"github.com/qiushenglei/gin-skeleton/internal/app/data/mysql/model"
-	"github.com/qiushenglei/gin-skeleton/internal/app/data/mysql/query"
+	"github.com/qiushenglei/gin-skeleton/internal/app/data/mysql/canal_test/model"
+	"github.com/qiushenglei/gin-skeleton/internal/app/data/mysql/canal_test/query"
 	"github.com/qiushenglei/gin-skeleton/internal/app/entity"
 )
 

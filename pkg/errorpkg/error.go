@@ -1,6 +1,8 @@
 package errorpkg
 
-import "fmt"
+import (
+	"fmt"
+)
 
 // 错误类型
 const (
@@ -10,9 +12,10 @@ const (
 )
 
 type Errx struct {
-	code int    // 错误码
-	msg  string // 错误信息
-	cate string // 错误类型
+	code  int    // 错误码
+	msg   string // 错误信息
+	cate  string // 错误类型
+	trace string
 }
 
 func (e Errx) Msg() string {
@@ -34,6 +37,12 @@ func (e Errx) Error() string {
 func (e Errx) SetMsg(msg string) Errx {
 	e.msg = msg
 	return e
+}
+
+func newErrx(code int, msg string) {
+	//pc := make([]uintptr, 10)
+	//n := runtime.Callers(2, pc)
+	//frames := runtime.CallersFrames(pc[:n])
 }
 
 func NewSysErrx(code int, msg string) Errx {
@@ -72,10 +81,11 @@ const (
 	codeSystem = 1001 // 系统错误
 
 	codeLogic = 10001 // 逻辑异常
-	codeParam = 10002 // 参数错误
+	CodeParam = 10002 // 参数错误
 
 	CodeFalse        = 10086
 	CodeNoGinContext = 10087
+	CodeNoLogin      = 10088
 
 	CodeBodyBind = 10088
 )
@@ -83,6 +93,7 @@ const (
 var (
 	ErrSystem       = NewSysErrx(codeSystem, "system err")
 	ErrLogic        = NewBizErrx(codeLogic, "logic err")
-	ErrParam        = NewBizErrx(codeParam, "param invalid")
+	ErrParam        = NewBizErrx(CodeParam, "param invalid")
 	ErrNoGinContext = NewNoGinContextErrx(CodeNoGinContext, "no gin context")
+	ErrNoLogin      = NewBizErrx(CodeNoLogin, "no login")
 )

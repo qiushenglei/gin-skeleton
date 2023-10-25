@@ -43,6 +43,18 @@ func RegisterRoutes() (r *gin.Engine) {
 	studentAPI.POST("/get_es_data", controller.GetESData) // 查询 Redis Key
 	studentAPI.POST("/delay_msg", controller.Delay)       // 查询 Redis Key
 
+	// upload
+	UploadAPI := r.Group("/upload")
+	UploadAPI.POST("/uploadImg", controller.UploadImg)
+
+	// login test
+	r.POST("/login", controller.Login)
+	loginAPI := r.Group("/login/", middleware2.AuthRequest())
+	{
+		loginAPI.POST("/logged", controller.Logged)
+
+	}
+
 	// RET
 	return
 }

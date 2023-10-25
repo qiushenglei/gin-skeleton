@@ -6,14 +6,13 @@ import (
 	"github.com/spf13/viper"
 
 	"github.com/anguloc/zet/pkg/safe"
-	"gorm.io/driver/mysql"
 	"gorm.io/gen"
-	"gorm.io/gorm"
 )
 
 //go:generate go run main.go
 
 var config string
+var usage bool
 
 type Querier interface {
 	// SELECT * FROM @@table WHERE id=@id
@@ -21,9 +20,16 @@ type Querier interface {
 }
 
 func main() {
+	// 获取flag
 	flag.StringVar(&config, "config", safe.Path(".env.local"), "config path")
+	flag.BoolVar(&usage, "help", false, "config path")
 	flag.Parse()
 
+	// help打印默认信息
+	if usage {
+		flag.PrintDefaults()
+		return
+	}
 	v := viper.New()
 	v.SetConfigType("env") // REQUIRED if the config file does not have the extension in the name
 	v.SetConfigFile(config)
@@ -32,45 +38,39 @@ func main() {
 		panic(fmt.Errorf("fatal error config file: %w", err))
 	}
 
-	c := gen.Config{
-		OutPath:           safe.Path("/internal/app/data/mysql/query"),
-		ModelPkgPath:      safe.Path("/internal/app/data/mysql/model"),
-		FieldNullable:     true,
-		FieldCoverable:    true,
-		FieldSignable:     true,
-		FieldWithIndexTag: true,
-		FieldWithTypeTag:  true,
-		Mode:              gen.WithDefaultQuery,
-	}
-	g := gen.NewGenerator(c)
+	CreateCanalTestModels(v)
+	CreateRWIsolateModels(v)
 
-	username := v.GetString("DB_SPEC_RW_USERNAME")
-	pw := v.GetString("DB_SPEC_RW_PASSWORD")
-	host := v.GetString("DB_SPEC_RW_HOST")
-	port := v.GetString("DB_SPEC_RW_PORT")
-	db := "canal_test"
-	dsn := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s?timeout=5s&readTimeout=5s&writeTimeout=1s&parseTime=true&loc=Local&charset=utf8mb4,utf8", username, pw, host, port, db)
+	return
 
-	conn, err := gorm.Open(mysql.Open(dsn))
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
-
-	g.UseDB(conn)
-
-	tables, err := conn.Migrator().GetTables()
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
-	models := make([]interface{}, len(tables))
-	for i, v := range tables {
-		models[i] = g.GenerateModel(v)
-	}
-
-	g.ApplyBasic(models...)
-	//g.ApplyInterface(func(Querier) {}, model.Rss{}, g.GenerateModel("score"))
-
-	g.Execute()
+	// canal_test
+	//username := v.GetString("DB_SPEC_RW_USERNAME")
+	//pw := v.GetString("DB_SPEC_RW_PASSWORD")
+	//host := v.GetString("DB_SPEC_RW_HOST")
+	//port := v.GetString("DB_SPEC_RW_PORT")
+	//db := "canal_test"
+	//dsn := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s?timeout=5s&readTimeout=5s&writeTimeout=1s&parseTime=true&loc=Local&charset=utf8mb4,utf8", username, pw, host, port, db)
+	//
+	//conn, err := gorm.Open(mysql.Open(dsn))
+	//if err != nil {
+	//	fmt.Println(err)
+	//	return
+	//}
+	//
+	//g.UseDB(conn)
+	//
+	//tables, err := conn.Migrator().GetTables()
+	//if err != nil {
+	//	fmt.Println(err)
+	//	return
+	//}
+	//models := make([]interface{}, len(tables))
+	//for i, v := range tables {
+	//	models[i] = g.GenerateModel(v)
+	//}
+	//
+	//g.ApplyBasic(models...)
+	////g.ApplyInterface(func(Querier) {}, model.Rss{}, g.GenerateModel("score"))
+	//
+	//g.Execute()
 }

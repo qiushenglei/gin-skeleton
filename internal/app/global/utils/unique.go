@@ -6,7 +6,7 @@ import (
 	"time"
 )
 
-func generateUniqueNumberByRand() int64 {
+func GenerateUniqueNumberByRand() int64 {
 	// 使用当前时间戳作为基础值
 	base := time.Now().Unix()
 

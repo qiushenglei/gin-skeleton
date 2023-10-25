@@ -2,7 +2,7 @@ package models
 
 import (
 	"encoding/json"
-	"github.com/qiushenglei/gin-skeleton/internal/app/data/mysql/model"
+	"github.com/qiushenglei/gin-skeleton/internal/app/data/mysql/canal_test/model"
 	"github.com/qiushenglei/gin-skeleton/internal/app/entity"
 	"github.com/qiushenglei/gin-skeleton/internal/app/global/utils"
 	"time"

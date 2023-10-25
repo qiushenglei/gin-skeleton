@@ -2,8 +2,9 @@ package models
 
 import (
 	"github.com/gin-gonic/gin"
-	"github.com/qiushenglei/gin-skeleton/internal/app/data/mysql/model"
-	"github.com/qiushenglei/gin-skeleton/internal/app/data/mysql/query"
+	"github.com/qiushenglei/gin-skeleton/internal/app/data/mysql/canal_test/model"
+	"github.com/qiushenglei/gin-skeleton/internal/app/data/mysql/canal_test/query"
+
 	"github.com/qiushenglei/gin-skeleton/internal/app/entity"
 	"github.com/qiushenglei/gin-skeleton/pkg/errorpkg"
 	"time"
@@ -38,7 +39,6 @@ func GetScoreBySearchCond(c *gin.Context, cond *entity.SearchCond) ([]*model.Sco
 	if cond.ScoreCond.SubjectName == "" || cond.ScoreCond.Score == nil {
 		return nil, nil
 	}
-
 	subject_info := GetSubjectBySearchCond(c, cond)
 	if subject_info.ID == 0 {
 		return nil, errorpkg.NewBizErrx(errorpkg.CodeFalse, "subject_name is not define")
