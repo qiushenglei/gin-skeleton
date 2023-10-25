@@ -1,6 +1,13 @@
 .idea
 
+
+cmd/server/server.exe
+cmd/server/.rocketmq_client_go/
+
+cmd/gorm_gen/gorm_gen.exe
+
 storage/log
+storage/img
 
 pkg/dbtoes/docker/mysql/data
 pkg/dbtoes/docker/canaladmin/mysqldata
