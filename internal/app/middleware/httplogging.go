@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/qiushenglei/gin-skeleton/internal/app/global/utils"
+	"github.com/qiushenglei/gin-skeleton/pkg/errorpkg"
 	"github.com/qiushenglei/gin-skeleton/pkg/logs"
 	"go.uber.org/zap"
 	"io"
@@ -56,8 +57,38 @@ func LogRequest() gin.HandlerFunc {
 			bytes.NewBufferString(""),
 		}
 		c.Writer = logWriter
+
+		// 添加自定义的GlobalRecover
+		defer func() {
+			if r := recover(); r != nil {
+				if r, ok := r.(error); ok {
+					logs.Log.Error(c, zap.Error(r))
+					utils.Response(c, nil, r)
+				}
+				if r, ok := r.(string); ok {
+					utils.Response(c, nil, errorpkg.NewIOErrx(errorpkg.CodeFalse, r))
+				}
+
+				// 异常记录日志
+				var rb map[string]interface{}
+				var requestBodyStr string
+				if len(requestBody) > 0 {
+					requestBodyStr = string(utils.JsonBytes2String(requestBody, &rb))
+				}
+				logs.Log.Error(
+					c,
+					zap.String("requestBody", requestBodyStr),
+					zap.String("responseBody", logWriter.responseBody.String()),
+				)
+
+				// 直接跳出中间件的循环了，不然又会走到下一个中间件或者controller
+				c.Abort()
+			}
+		}()
+
 		c.Next()
 
+		// 正常记录日志
 		var rb map[string]interface{}
 		// requestBody内容里有tab和\r\n,可以用jsondecode和encode过滤掉
 		requestBodyBytes := utils.JsonBytes2String(requestBody, &rb)

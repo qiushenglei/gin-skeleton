@@ -25,6 +25,13 @@ go run  crontab -e .env.local -p 10011 -m debug
 cd cmd/server
 go run rocketmq -e .env.local -p 10011 -m debug
 
+# grpc server 
+cd proto/
+protoc --go_out=. --go_opt=paths=source_relative --go-grpc_out=. --go-grpc_opt=paths=source_relative order.proto
+
+cd cmd/server
+go run rpc -e .env.local -p 10012 -m debug
+
 # 生成gorm的DAO和model
 go cd cmd/gorm_gene
 go run .

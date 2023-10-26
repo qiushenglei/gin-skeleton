@@ -11,6 +11,7 @@ var (
 	EnvFile    string // 定义配置文件名称
 	HttpPort   string // 服务端口
 	AppRunMode string // 程序运行模式
+	RpcPort    string // 程序运行模式
 
 	// EnvConfig ... 全局配置文件
 	EnvConfig *viper.Viper

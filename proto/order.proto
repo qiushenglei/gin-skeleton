@@ -1,0 +1,66 @@
+syntax="proto3";
+
+// package  proto文件的包名(与go无关)  生成的语言类放在什么包里面  这个package必须紧跟着syntax="proto3"
+package pdfiles.user;
+
+// 定义生成的pb文件go的package名
+option go_package = "/proto";
+
+import "google/protobuf/descriptor.proto";
+
+// 定义service服务 会翻译为UserServiceClient 和 userServiceClient 和对外暴露的 NewUserServiceClient供客户端调用
+// 对外暴露GetUserList 和 GetUser方法
+// 定义服务
+service OrderServer{
+  // 获取列表
+  rpc FindAll(FindAllRequest) returns (FindAllReply) {}
+
+  //定义获取用户列表信息方法
+//  rpc GetUserList(UserRequest) returns (UserListReply) {}
+//  // 定义获取用户信息方法
+//  rpc GetUser(UserRequest) returns (UserReply) {}
+}
+
+message FindAllRequest {
+  string app_id=1;
+  int32 page=2;
+  int32 page_size=3;
+}
+
+message FindAllReply {
+  repeated OrderData list =1;
+  int32 count=2;
+}
+
+message OrderData {
+  uint32 id = 1;
+  string order_id = 2;
+  string app_id = 3;
+  int32 fee = 4;
+  string add_time = 5;
+  string update_time = 6;
+}
+
+//// 入参
+//message UserRequest{
+//  string class_id= 1;
+//  int32  phone= 2;
+//}
+//
+//// GetUserList出参
+//message UserListReply{
+//  repeated User user = 1;
+//}
+//
+//// GetUser出参
+//message UserReply{
+//  User user = 1;
+//}
+//
+//message User {
+//  string name = 1;
+//  string phone = 2;
+//  string class_id = 3;
+//  string sex = 4;
+//  int32 id = 5;
+//}

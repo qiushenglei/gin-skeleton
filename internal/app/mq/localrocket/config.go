@@ -68,7 +68,7 @@ func RegisterRocketMQProducer() error {
 	var err error
 	for i := 0; i < 1; i++ {
 		err = Producer.SyncSendMsg(context.Background(), OrderPayEvent, "这里是测试", nil)
-		err = Producer.AsyncSendMsg(context.Background(), OrderAutoSuccessEvent, "这里是延时测试", &rocketpkg.Delay{Expire: 60})
+		err = Producer.SyncSendMsg(context.Background(), OrderAutoSuccessEvent, "这里是延时测试", &rocketpkg.Delay{Expire: 60})
 	}
 	return err
 }

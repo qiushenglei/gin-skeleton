@@ -7,12 +7,17 @@ import (
 	"github.com/qiushenglei/gin-skeleton/internal/app/crontabs"
 	"github.com/qiushenglei/gin-skeleton/internal/app/global/constants"
 	"github.com/qiushenglei/gin-skeleton/internal/app/global/utils"
+	localgrpc "github.com/qiushenglei/gin-skeleton/internal/app/grpc"
 	"github.com/qiushenglei/gin-skeleton/internal/app/mq/localrocket"
 	"github.com/qiushenglei/gin-skeleton/pkg/logs"
+	"github.com/qiushenglei/gin-skeleton/proto"
 	routes "github.com/qiushenglei/gin-skeleton/routes/http"
 	"github.com/robfig/cron/v3"
 	"github.com/spf13/cobra"
+	"google.golang.org/grpc"
+	"net"
 	"net/http"
+	"time"
 )
 
 var (
@@ -30,7 +35,7 @@ var (
 		PersistentPreRun: HttpServerPersistentPreRun,
 	}
 
-	// 因为这里是子命令行crontab，所以build之后，还需要./exefile.exe crontab -e .env.local -p 10011
+	// 因为这里是子命令行crontab，所以build之后，还需要./exefile crontab -e .env.local -p 10011
 	CrontabCmd = &cobra.Command{
 		Use:   "crontab",
 		Short: "启动 定时任务 服务",
@@ -38,12 +43,20 @@ var (
 		Run:   RunCrontab,
 	}
 
-	// 因为这里是子命令行rocketmq，所以build之后，还需要./e_photo_goods.exe crontab -e .env.local -p 10011
+	// 因为这里是子命令行rocketmq，所以build之后，还需要./exefile crontab -e .env.local -p 10011
 	RocketMQCmd = &cobra.Command{
 		Use:   "rocketmq",
 		Short: "启动 rocketmq消费者 服务",
 		Long:  "启动 rocketmq消费者 服务",
 		Run:   RunRocketMQ,
+	}
+
+	// 因为这里是子命令行rpc，所以build之后，还需要./exefile rpc -e .env.local -p 10011
+	RPCCmd = &cobra.Command{
+		Use:   "rpc",
+		Short: "启动 rpc 服务",
+		Long:  "启动 rpc 服务",
+		Run:   RunRPC,
 	}
 )
 
@@ -54,7 +67,10 @@ func CmdExecute() {
 	RootCmd.PersistentFlags().StringVarP(&configs.HttpPort, "http_port", "p", "10011", "http端口")
 	RootCmd.PersistentFlags().StringVarP(&configs.AppRunMode, "mode", "m", constants.ReleaseMode, "运行模式")
 
-	RootCmd.AddCommand(ServerCmd, CrontabCmd, RocketMQCmd)
+	// RPC服务参数
+	RPCCmd.PersistentFlags().StringVarP(&configs.RpcPort, "rpc_port", "r", "10012", "rpc服务端口")
+
+	RootCmd.AddCommand(ServerCmd, CrontabCmd, RocketMQCmd, RPCCmd)
 	if err := RootCmd.Execute(); err != nil {
 		return
 	}
@@ -135,4 +151,35 @@ func RunRocketMQ(cmd *cobra.Command, args []string) {
 
 	GracefulShutdown(closers)
 
+}
+
+func RunRPC(cmd *cobra.Command, args []string) {
+	// 注册除了路由以外的所有东西
+	closers := RegistAll(cmd.Use)
+
+	lis, err := net.Listen("tcp", "127.0.0.1:"+configs.RpcPort)
+	if err != nil {
+		return
+	}
+	opt := []grpc.ServerOption{
+		grpc.ConnectionTimeout(time.Second * 10),
+	}
+
+	GrpcServer := grpc.NewServer(opt...)
+	proto.RegisterOrderServerServer(GrpcServer, &localgrpc.OrderServer{})
+
+	//为了优雅的关闭，到了子协程里开启grpc服务。Server会for自旋，accept socket等待连接
+	go func() {
+		if err = GrpcServer.Serve(lis); err != nil {
+			return
+		}
+	}()
+
+	closers = append(closers, func() error {
+		GrpcServer.Stop()
+		return nil
+	})
+
+	ListenSignal()
+	GracefulShutdown(closers)
 }

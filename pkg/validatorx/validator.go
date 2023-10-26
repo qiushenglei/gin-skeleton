@@ -29,3 +29,13 @@ func Validate(ctx context.Context, body interface{}) error {
 	}
 	return nil
 }
+
+func ValidateRPC(body interface{}) error {
+	// validator验证
+	v := validator.New()
+	err := v.Struct(body)
+	if err != nil {
+		panic(err)
+	}
+	return nil
+}

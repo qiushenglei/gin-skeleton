@@ -1,19 +1,17 @@
 package services
 
 import (
-	"github.com/gin-gonic/gin"
+	"context"
 	"github.com/qiushenglei/gin-skeleton/internal/app/data/mysql/models"
+	"github.com/qiushenglei/gin-skeleton/internal/app/data/mysql/rw_isolate/model"
 	"github.com/qiushenglei/gin-skeleton/internal/app/entity"
 )
 
-func FindAll(ctx *gin.Context, request *entity.FindOrderRequest) (*entity.FindOrderResponse, error) {
+func FindAll(ctx context.Context, request *entity.FindOrderRequest) ([]*model.Order1, int64, error) {
 	res, count, err := models.FindAll(ctx, request)
 	if err != nil {
 		panic(err)
 	}
 
-	return &entity.FindOrderResponse{
-		res,
-		int(count),
-	}, err
+	return res, count, err
 }

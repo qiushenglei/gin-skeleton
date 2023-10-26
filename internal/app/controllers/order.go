@@ -14,6 +14,9 @@ func FindAll(c *gin.Context) {
 		panic(err)
 	}
 
-	data, err := services.FindAll(c, body)
-	utils.Response(c, data, err)
+	res, count, err := services.FindAll(c, body)
+	utils.Response(c, &entity.FindOrderResponse{
+		res,
+		int(count),
+	}, err)
 }
