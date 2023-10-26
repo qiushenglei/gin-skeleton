@@ -2,6 +2,10 @@ package cmd
 
 import (
 	"context"
+	"net"
+	"net/http"
+	"time"
+
 	"github.com/gin-gonic/gin"
 	"github.com/qiushenglei/gin-skeleton/internal/app/configs"
 	"github.com/qiushenglei/gin-skeleton/internal/app/crontabs"
@@ -15,9 +19,6 @@ import (
 	"github.com/robfig/cron/v3"
 	"github.com/spf13/cobra"
 	"google.golang.org/grpc"
-	"net"
-	"net/http"
-	"time"
 )
 
 var (
@@ -163,6 +164,7 @@ func RunRPC(cmd *cobra.Command, args []string) {
 	}
 	opt := []grpc.ServerOption{
 		grpc.ConnectionTimeout(time.Second * 10),
+		grpc.ChainUnaryInterceptor(GRPCInterceptor),
 	}
 
 	GrpcServer := grpc.NewServer(opt...)
@@ -182,4 +184,13 @@ func RunRPC(cmd *cobra.Command, args []string) {
 
 	ListenSignal()
 	GracefulShutdown(closers)
+}
+
+func GRPCInterceptor(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp interface{}, err error) {
+	// before
+	//fmt.Println(info.FullMethod)
+	// 这个就是中间件的next
+	resp, err = handler(ctx, req)
+	// after
+	return resp, err
 }
