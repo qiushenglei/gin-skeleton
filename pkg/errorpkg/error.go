@@ -86,6 +86,7 @@ const (
 	CodeFalse        = 10086
 	CodeNoGinContext = 10087
 	CodeNoLogin      = 10088
+	CodeNoGetTable   = 100889
 
 	CodeBodyBind = 10088
 )
@@ -94,6 +95,7 @@ var (
 	ErrSystem       = NewSysErrx(codeSystem, "system err")
 	ErrLogic        = NewBizErrx(codeLogic, "logic err")
 	ErrParam        = NewBizErrx(CodeParam, "param invalid")
-	ErrNoGinContext = NewNoGinContextErrx(CodeNoGinContext, "no gin context")
+	ErrNoGinContext = NewBizErrx(CodeNoGinContext, "no gin context")
 	ErrNoLogin      = NewBizErrx(CodeNoLogin, "no login")
+	ErrGetTableName = NewBizErrx(CodeNoGetTable, "get table name fail")
 )

@@ -4,7 +4,7 @@ go 1.19
 
 require (
 	github.com/IBM/sarama v1.41.2
-	github.com/anguloc/zet v0.0.0-20231008162529-ccb4acd289ce
+	github.com/anguloc/zet v0.0.0-20231018152809-a337e9b733c1
 	github.com/apache/rocketmq-client-go/v2 v2.1.2
 	github.com/bwmarrin/snowflake v0.3.0
 	github.com/elastic/go-elasticsearch/v8 v8.10.0

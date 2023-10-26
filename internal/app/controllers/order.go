@@ -1,0 +1,19 @@
+package controller
+
+import (
+	"github.com/gin-gonic/gin"
+	"github.com/qiushenglei/gin-skeleton/internal/app/entity"
+	"github.com/qiushenglei/gin-skeleton/internal/app/global/utils"
+	"github.com/qiushenglei/gin-skeleton/internal/app/services"
+	"github.com/qiushenglei/gin-skeleton/pkg/validatorx"
+)
+
+func FindAll(c *gin.Context) {
+	body := &entity.FindOrderRequest{}
+	if err := validatorx.Validate(c, body); err != nil {
+		panic(err)
+	}
+
+	data, err := services.FindAll(c, body)
+	utils.Response(c, data, err)
+}

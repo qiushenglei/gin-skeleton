@@ -52,7 +52,11 @@ func RegisterRoutes() (r *gin.Engine) {
 	loginAPI := r.Group("/login/", middleware2.AuthRequest())
 	{
 		loginAPI.POST("/logged", controller.Logged)
+	}
 
+	OrderAPI := r.Group("/order/", middleware2.AuthRequest())
+	{
+		OrderAPI.POST("/find", controller.FindAll)
 	}
 
 	// RET

@@ -2,6 +2,7 @@ package middleware
 
 import (
 	"context"
+	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/qiushenglei/gin-skeleton/internal/app/global/utils"
 	"github.com/qiushenglei/gin-skeleton/pkg/errorpkg"
@@ -22,5 +23,7 @@ func GlobalRecover() gin.HandlerFunc {
 			}
 		}()
 		c.Next()
+
+		fmt.Println("如果不正常是不会到这里的")
 	}
 }
