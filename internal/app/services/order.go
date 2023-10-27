@@ -10,7 +10,7 @@ import (
 func FindAll(ctx context.Context, request *entity.FindOrderRequest) ([]*model.Order1, int64, error) {
 	res, count, err := models.FindAll(ctx, request)
 	if err != nil {
-		panic(err)
+		//panic(err)
 	}
 
 	return res, count, err

@@ -168,7 +168,10 @@ func RunRPC(cmd *cobra.Command, args []string) {
 	}
 
 	GrpcServer := grpc.NewServer(opt...)
+	// 启动一个一元链式grpc服务
 	proto.RegisterOrderServerServer(GrpcServer, &localgrpc.OrderServer{})
+	// 启动一个流式grpc服务
+	proto.RegisterOrderStreamServerServer(GrpcServer, &localgrpc.OrderStream{})
 
 	//为了优雅的关闭，到了子协程里开启grpc服务。Server会for自旋，accept socket等待连接
 	go func() {

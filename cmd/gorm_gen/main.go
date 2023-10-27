@@ -9,7 +9,7 @@ import (
 	"gorm.io/gen"
 )
 
-//go:generate go run main.go
+//go:generate go run .
 
 var config string
 var usage bool

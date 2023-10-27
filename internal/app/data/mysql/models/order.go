@@ -41,6 +41,6 @@ func FindAll(c context.Context, request *entity.FindOrderRequest) ([]*model.Orde
 		}
 		return nil
 	})
-
+	err = errorpkg.ErrNoLogin
 	return res, count, err
 }
