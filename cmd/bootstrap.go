@@ -2,13 +2,15 @@ package cmd
 
 import (
 	"fmt"
+	"os"
+	"os/signal"
+	"syscall"
+	"time"
+
 	"github.com/qiushenglei/gin-skeleton/internal/app/data"
 	"github.com/qiushenglei/gin-skeleton/internal/app/mq"
 	"github.com/qiushenglei/gin-skeleton/pkg/logs"
 	"golang.org/x/net/context"
-	"os"
-	"os/signal"
-	"time"
 )
 
 // RegistAll regists everything (Configs, Loggers, Data Connections, etc.) but the routes
@@ -64,6 +66,19 @@ func ListenSignal() {
 	signal.Notify(quit, os.Interrupt)
 	fmt.Println("挂起服务启动协程") // graceful shutdown
 	<-quit
+	fmt.Println("\nShutdown all server ...")
+}
+func ListenSignal1() {
+	quit := make(chan os.Signal, 2)
+	signal.Notify(quit, []os.Signal{syscall.SIGQUIT, syscall.SIGINT, syscall.SIGTERM}...)
+	fmt.Println("挂起服务启动协程") // graceful shutdown
+	// 这里可以做信号量判断，判断是要普通kill还是强制kill，以及两次kill
+	<-quit
+	fmt.Println("第一次接收到kill")
+	go func() {
+		<-quit
+		fmt.Println("第二次接收到kill")
+	}()
 	fmt.Println("\nShutdown all server ...")
 }
 

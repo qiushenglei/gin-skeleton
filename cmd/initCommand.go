@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"context"
+	"fmt"
 	"net"
 	"net/http"
 	"time"
@@ -116,7 +117,13 @@ func RunHttpServer(cmd *cobra.Command, args []string) {
 
 func RunCrontab(cmd *cobra.Command, args []string) {
 	// 注册除了路由以外的所有东西
-	closers := RegistAll(cmd.Use)
+	//closers := RegistAll(cmd.Use)
+	closers := []func() error{
+		func() error {
+			fmt.Println("资源释放")
+			return nil
+		},
+	}
 
 	// crontab
 	c := cron.New()
@@ -131,14 +138,42 @@ func RunCrontab(cmd *cobra.Command, args []string) {
 
 	c.Start()
 
-	ListenSignal()
+	ctx, cancel := context.WithCancel(context.TODO())
+	c1 := cron.New()
+	for _, eachJob := range crontabs.JobList1 {
+		_, err := c1.AddFunc(eachJob.Schedule, func() {
+			eachJob.Run(ctx)
+		})
+		if err != nil {
+			logs.Log.Error(ctx, err.Error())
+			panic(err)
+		}
+	}
+	c1.Start()
+
+	ListenSignal1()
 
 	// 结束 HTTP 响应
 	if c != nil {
 		if err := c.Stop(); err != nil {
 		}
 	}
+
+	fmt.Println("接收到kill信号")
+	cancel()
+	if c1 != nil {
+		cancelCtx := c1.Stop()
+		select {
+		case <-cancelCtx.Done():
+			fmt.Println("所有业务安全关闭")
+		case <-time.After(4 * time.Second):
+			fmt.Println("4秒业务还没有正常结束，强制结束")
+		}
+	}
+
+	fmt.Println("开始释放资源")
 	GracefulShutdown(closers)
+	fmt.Println("释放资源完毕")
 
 }
 
