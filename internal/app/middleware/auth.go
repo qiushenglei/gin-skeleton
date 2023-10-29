@@ -32,11 +32,13 @@ func AuthRequest() gin.HandlerFunc {
 		redisKey := fmt.Sprintf("%s_%s", AppID, token)
 		if loginInfo, err := data.RedisClient.WithContext(c).Get(c, redisKey).Bytes(); err == nil && len(loginInfo) > 0 {
 			if err := json.Unmarshal(loginInfo, &user); err != nil {
-				panic(errorpkg.ErrNoLogin)
+				//panic(errorpkg.ErrNoLogin)
+				panic(errorpkg.NewBizErrx(errorpkg.CodeFalse, "no login 1"))
 			}
 			c.Set("LoginInfo", user)
 		} else {
-			panic(errorpkg.ErrNoLogin)
+			panic(errorpkg.NewBizErrx(errorpkg.CodeFalse, "no login 1"))
+			//panic(errorpkg.ErrNoLogin)
 		}
 
 		// 业务逻辑执行

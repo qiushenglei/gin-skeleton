@@ -12,10 +12,9 @@ const (
 )
 
 type Errx struct {
-	code  int    // 错误码
-	msg   string // 错误信息
-	cate  string // 错误类型
-	trace string
+	code int    // 错误码
+	msg  string // 错误信息
+	cate string // 错误类型
 }
 
 func (e Errx) Msg() string {
@@ -39,42 +38,26 @@ func (e Errx) SetMsg(msg string) Errx {
 	return e
 }
 
-func newErrx(code int, msg string) {
-	//pc := make([]uintptr, 10)
-	//n := runtime.Callers(2, pc)
-	//frames := runtime.CallersFrames(pc[:n])
+func newErrx(code int, msg string, cate string) Errx {
+	err := Errx{
+		code: code,
+		msg:  msg,
+		cate: cate,
+	}
+	return err
 }
 
 func NewSysErrx(code int, msg string) Errx {
-	return Errx{
-		code: code,
-		msg:  msg,
-		cate: cateSys,
-	}
+	return newErrx(code, msg, cateSys)
 }
 
 func NewBizErrx(code int, msg string) Errx {
-	return Errx{
-		code: code,
-		msg:  msg,
-		cate: cateBiz,
-	}
+	return newErrx(code, msg, cateBiz)
+
 }
 
 func NewIOErrx(code int, msg string) Errx {
-	return Errx{
-		code: code,
-		msg:  msg,
-		cate: cateIO,
-	}
-}
-
-func NewNoGinContextErrx(code int, msg string) Errx {
-	return Errx{
-		code: code,
-		msg:  msg,
-		cate: cateIO,
-	}
+	return newErrx(code, msg, cateIO)
 }
 
 const (

@@ -61,9 +61,10 @@ func LogRequest() gin.HandlerFunc {
 		// 添加自定义的GlobalRecover
 		defer func() {
 			if r := recover(); r != nil {
-				if r, ok := r.(error); ok {
-					logs.Log.Error(c, zap.Error(r))
-					utils.Response(c, nil, r)
+				var err error
+				var ok bool
+				if err, ok = r.(error); ok {
+					utils.Response(c, nil, err)
 				}
 				if r, ok := r.(string); ok {
 					utils.Response(c, nil, errorpkg.NewIOErrx(errorpkg.CodeFalse, r))
@@ -75,6 +76,7 @@ func LogRequest() gin.HandlerFunc {
 				if len(requestBody) > 0 {
 					requestBodyStr = string(utils.JsonBytes2String(requestBody, &rb))
 				}
+
 				logs.Log.Error(
 					c,
 					zap.String("requestBody", requestBodyStr),
