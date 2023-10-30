@@ -30,7 +30,7 @@ func (e Errx) Code() int {
 }
 
 func (e Errx) Error() string {
-	return fmt.Sprintf("failed to %s,code:%d,cate:%s", e.Msg, e.code, e.cate)
+	return fmt.Sprintf("failed to %s,code:%d,cate:%s", e.msg, e.code, e.cate)
 }
 
 func (e Errx) SetMsg(msg string) Errx {

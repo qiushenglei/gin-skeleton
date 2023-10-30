@@ -67,7 +67,7 @@ func LogRequest() gin.HandlerFunc {
 					utils.Response(c, nil, err)
 				}
 				if r, ok := r.(string); ok {
-					utils.Response(c, nil, errorpkg.NewIOErrx(errorpkg.CodeFalse, r))
+					utils.Response(c, nil, errorpkg.NewBizErrx(errorpkg.CodeFalse, r))
 				}
 
 				// 异常记录日志

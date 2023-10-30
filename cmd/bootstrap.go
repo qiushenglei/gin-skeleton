@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/qiushenglei/gin-skeleton/internal/app/data"
 	"github.com/qiushenglei/gin-skeleton/internal/app/mq"
+	"github.com/qiushenglei/gin-skeleton/internal/app/sentinelx"
 	"github.com/qiushenglei/gin-skeleton/pkg/logs"
 	"golang.org/x/net/context"
 	"os"
@@ -25,6 +26,9 @@ func RegistAll(serverName string) (closers []func() error) {
 	if err != nil {
 		panic("Failed to regist logger: " + err.Error())
 	}
+
+	// 注册限流sentinel
+	sentinelx.RegisterSentinelRule()
 
 	// 注册 数据层的连接
 	dataClosers, err := data.RegisterData()

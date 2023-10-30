@@ -22,6 +22,7 @@ func RegisterRoutes() (r *gin.Engine) {
 	r.Use(middleware2.BindRequestID()) // 请求ID
 	r.Use(middleware2.LogRequest())    // 记录请求信息
 	r.Use(middleware2.GlobalRecover()) // 全局recover,抛出异常也需要记录请求日志，所以放后面
+	//r.Use(middleware2.RateLimit())     // 限流
 
 	// 探针
 	r.GET("/", func(ctx *gin.Context) { ctx.String(http.StatusOK, "Hello, this is Gin-Awesome! ") })

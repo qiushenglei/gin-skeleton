@@ -43,5 +43,6 @@ func AuthRequest() gin.HandlerFunc {
 
 		// 业务逻辑执行
 		c.Next()
+		//logging.Info("request over")
 	}
 }
