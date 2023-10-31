@@ -133,13 +133,17 @@ func RunCrontab(cmd *cobra.Command, args []string) {
 
 	ListenSignal()
 
-	// 结束 HTTP 响应
-	if c != nil {
-		if err := c.Stop(); err != nil {
-		}
-	}
-	GracefulShutdown(closers)
+	// stop返回了一个cancel ctx,用于等待running job
+	cronCtx := c.Stop()
 
+	// 如果5s,未结束超时结束
+	timeout, _ := context.WithTimeout(cronCtx, time.Second*5)
+
+	select {
+	case <-timeout.Done():
+	}
+
+	GracefulShutdown(closers)
 }
 
 func RunRocketMQ(cmd *cobra.Command, args []string) {

@@ -9,6 +9,7 @@ import (
 	"golang.org/x/net/context"
 	"os"
 	"os/signal"
+	"syscall"
 	"time"
 )
 
@@ -64,8 +65,8 @@ func registerConfig() error {
 
 // ListenSignal 监听信号
 func ListenSignal() {
-	quit := make(chan os.Signal, 1)
-	signal.Notify(quit, os.Interrupt)
+	quit := make(chan os.Signal)
+	signal.Notify(quit, os.Interrupt, syscall.SIGHUP, syscall.SIGQUIT, syscall.SIGTERM, syscall.SIGINT)
 	fmt.Println("挂起服务启动协程") // graceful shutdown
 	<-quit
 	fmt.Println("\nShutdown all server ...")
