@@ -51,7 +51,8 @@ func GetScoreBySearchCond(c *gin.Context, cond *entity.SearchCond) ([]*model.Sco
 	}
 
 	if len(scores) == 0 {
-		return scores, errorpkg.NewBizErrx(errorpkg.CodeFalse, "not found score data")
+		return scores, errorpkg.ErrChildQueryNil
+		//return scores, errorpkg.NewBizErrx(errorpkg.CodeFalse, "not found score data")
 	}
 	return scores, nil
 }

@@ -10,7 +10,6 @@ import (
 	isolateModel "github.com/qiushenglei/gin-skeleton/internal/app/data/mysql/rw_isolate/model"
 	isolateQuery "github.com/qiushenglei/gin-skeleton/internal/app/data/mysql/rw_isolate/query"
 
-	"github.com/qiushenglei/gin-skeleton/internal/app/global/utils"
 	"github.com/qiushenglei/gin-skeleton/pkg/dbtoes"
 	"github.com/qiushenglei/gin-skeleton/pkg/logs"
 	"gorm.io/gorm/logger"
@@ -69,27 +68,45 @@ func RegisterData() (closers []func() error, err error) {
 	RegisterES()
 
 	//  建立 Mongo 连接
+	mongoClose := RegisterMongoDB()
+	closers = append(closers, mongoClose)
 	return
 }
 
-// RegistMongoDB ...
-func RegistMongoDB(username, password, addr, cluster string, mc MongoCli) (err error) {
+// RegisterMongoDB ...
+func RegisterMongoDB() func() error {
+	isRegister := configs.EnvConfig.GetInt("REGISTER_MONGO")
+	if isRegister == 0 {
+		return nil
+	}
+
+	//username := configs.EnvConfig.GetString("MONGO_USERNAME")
+	//password := configs.EnvConfig.GetString("MONGO_PASSWORD")
+	host := configs.EnvConfig.GetString("MONGO_HOST")
+	port := configs.EnvConfig.GetString("MONGO_PORT")
+	//cluster := "order"
+
 	clientOptions := options.Client().
 		// "mongodb+srv://Mongo:<password>@cluster0.qhi85.mongodb.net/myFirstDatabase?retryWrites=true&w=majority"
-		ApplyURI(utils.StringConcat("", "mongodb+srv://", username, ":", password, "@", addr, "/", cluster, "?retryWrites=true&w=majority"))
+		//ApplyURI(utils.StringConcat("", "mongodb://", username, ":", password, "@", host, ":", port, "/", cluster, "?retryWrites=true&w=majority"))
+		ApplyURI(fmt.Sprintf("mongodb://%v:%v/", host, port)).
+		SetTimeout(10 * time.Second).
+		SetReplicaSet("").
+		SetMaxPoolSize(10)
 
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	mc.Cli, err = mongo.Connect(ctx, clientOptions)
+	var err error
+	MongoClient, err = mongo.Connect(ctx, clientOptions)
 	if err != nil {
-		return
+		panic(err)
 	}
-	err = mc.Cli.Ping(context.TODO(), nil)
-	mc.Close = func() error { return mc.Cli.Disconnect(context.TODO()) }
+	err = MongoClient.Ping(ctx, nil)
+	close := func() error { return MongoClient.Disconnect(context.TODO()) }
 
 	// RET
-	return
+	return close
 }
 
 func RegisterMySQL() func() error {

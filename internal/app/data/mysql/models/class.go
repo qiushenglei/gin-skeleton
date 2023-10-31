@@ -46,7 +46,8 @@ func GetClassBySearchCond(c *gin.Context, cond *entity.SearchCond) (*model.Class
 
 	if res.ID == 0 {
 		// 没查到数据
-		return res, errorpkg.NewBizErrx(errorpkg.CodeFalse, "subject_name is not define")
+		return res, errorpkg.ErrChildQueryNil
+		//return res, errorpkg.NewBizErrx(errorpkg.CodeFalse, "subject_name is not define")
 	}
 	return res, nil
 }

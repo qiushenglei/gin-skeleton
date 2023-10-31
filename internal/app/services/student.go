@@ -1,12 +1,15 @@
 package services
 
 import (
+	"errors"
 	"github.com/gin-gonic/gin"
 	"github.com/qiushenglei/gin-skeleton/internal/app/data"
+	"github.com/qiushenglei/gin-skeleton/internal/app/data/mongox"
 	"github.com/qiushenglei/gin-skeleton/internal/app/data/mysql/canal_test/model"
 	"github.com/qiushenglei/gin-skeleton/internal/app/data/mysql/canal_test/query"
 	"github.com/qiushenglei/gin-skeleton/internal/app/data/mysql/models"
 	"github.com/qiushenglei/gin-skeleton/internal/app/entity"
+	"github.com/qiushenglei/gin-skeleton/pkg/errorpkg"
 	"gorm.io/gorm/clause"
 )
 
@@ -78,6 +81,10 @@ func SetData(ctx *gin.Context, student *entity.StudentSetDataRequest) uint32 {
 		return nil
 	})
 
+	// set user mongodb
+	//mongox.Insert(ctx, student)
+	mongox.Upsert(ctx, student)
+
 	return user.ID
 }
 
@@ -93,17 +100,18 @@ func GetUserData(c *gin.Context, cond *entity.SearchCond) ([]*model.User, error)
 
 	// class cond
 	class, err := models.GetClassBySearchCond(c, cond)
-	if err != nil {
+	if errors.Is(err, errorpkg.ErrChildQueryNil) {
 		// 没有满足条件的数据
+		return nil, nil
 	} else if class != nil {
 		q = q.Where(query.Q.User.ClassID.Eq(class.ID))
 	}
 
 	// score cond
 	scores, err := models.GetScoreBySearchCond(c, cond)
-	if err != nil {
+	if errors.Is(err, errorpkg.ErrChildQueryNil) {
 		// 没有满足条件的数据
-		return nil, err
+		return nil, nil
 	} else if len(scores) > 0 {
 		var studentIds []string
 		for _, v := range scores {
@@ -111,6 +119,20 @@ func GetUserData(c *gin.Context, cond *entity.SearchCond) ([]*model.User, error)
 		}
 		q = q.Where(query.Q.User.StudentID.In(studentIds...))
 	}
+
+	// mongo cond
+	mongoRes, err := mongox.GetUserMongoBySearchCond(c, cond)
+	if errors.Is(err, errorpkg.ErrChildQueryNil) {
+		// 没有满足条件的数据
+		return nil, nil
+	} else {
+		var studentIds []string
+		for _, v := range mongoRes {
+			studentIds = append(studentIds, v.StudentID)
+		}
+		q.Where(query.Q.User.StudentID.In(studentIds...))
+	}
+
 	var users []*model.User
 	if err := q.Scan(&users); err != nil {
 		panic(err)

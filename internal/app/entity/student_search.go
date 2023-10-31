@@ -13,6 +13,9 @@ type StudentSetDataRequest struct {
 	AddTime    *localtime.LocalTime `json:"add_time" `
 	UpdateTime *localtime.LocalTime `json:"update_time"  `
 	IsDeleted  int                  `json:"is_deleted" validate:"oneof=0 1"`
+	Content    string               `json:"content"`
+	Hobby      []string             `json:"hobby"`
+	Address    []string             `json:"address"`
 	ClassInfo  *ClassInfo           `json:"class_info" validate:"required" `
 	ScoreInfo  []*Score             `json:"score_info"`
 }
@@ -51,7 +54,9 @@ type SearchCond struct {
 	StudentId string    `json:"student_id"`
 	Label     []string  `json:"label"`
 	ScoreCond ScoreCond `json:"score_cond"`
-	Page      int       `json:page`
+	Content   string    `json:"content"`
+	Address   string    `json:"address"`
+	Page      int       `json:"page"`
 	PageSize  int       `json:"page_size"`
 }
 

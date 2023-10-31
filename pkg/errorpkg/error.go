@@ -71,14 +71,17 @@ const (
 	CodeNoLogin      = 10088
 	CodeNoGetTable   = 100889
 
+	CodeChildQueryNilOnQueryCond = 6666 // 生成查询条件时，子查询为空
+
 	CodeBodyBind = 10088
 )
 
 var (
-	ErrSystem       = NewSysErrx(codeSystem, "system err")
-	ErrLogic        = NewBizErrx(codeLogic, "logic err")
-	ErrParam        = NewBizErrx(CodeParam, "param invalid")
-	ErrNoGinContext = NewBizErrx(CodeNoGinContext, "no gin context")
-	ErrNoLogin      = NewBizErrx(CodeNoLogin, "no login")
-	ErrGetTableName = NewBizErrx(CodeNoGetTable, "get table name fail")
+	ErrSystem        = NewSysErrx(codeSystem, "system err")
+	ErrLogic         = NewBizErrx(codeLogic, "logic err")
+	ErrParam         = NewBizErrx(CodeParam, "param invalid")
+	ErrNoGinContext  = NewBizErrx(CodeNoGinContext, "no gin context")
+	ErrNoLogin       = NewBizErrx(CodeNoLogin, "no login")
+	ErrGetTableName  = NewBizErrx(CodeNoGetTable, "get table name fail")
+	ErrChildQueryNil = NewBizErrx(CodeChildQueryNilOnQueryCond, "child query is nil")
 )
