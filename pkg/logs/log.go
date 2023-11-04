@@ -1,6 +1,7 @@
 package logs
 
 import (
+	"fmt"
 	"github.com/anguloc/zet/pkg/safe"
 	rotatelogs "github.com/lestrrat/go-file-rotatelogs"
 	"github.com/qiushenglei/gin-skeleton/internal/app/configs"
@@ -121,18 +122,33 @@ func getLogWriter(filePath, fileext string) (zapcore.WriteSyncer, error) {
 
 // 日志文件切割，按天
 func getWriter(filename, fileext string) (io.Writer, error) {
-	location, _ := time.LoadLocation("Asia/Shanghai")
+	fmt.Println(time.Now())
+	//location, _ := time.LoadLocation("Asia/Shanghai")
+	//location, _ := time.LoadLocation("America/New_York")
+	//location := time.FixedZone("Asia/Shanghai", 8)
+	clock := &Clock1{}
 	// 保存30天内的日志，每24小时(整点)分割一次日志
 	hook, err := rotatelogs.New(
 		filename+"_%Y%m%d."+fileext,
 		rotatelogs.WithLinkName(filename),
 		rotatelogs.WithMaxAge(time.Hour*24*30),
 		rotatelogs.WithRotationTime(time.Hour*24),
-		rotatelogs.WithLocation(location), //设置成东8区，保证0点后更新日志
+		rotatelogs.WithClock(clock),
+		//rotatelogs.WithLocation(time.UTC), //设置成东8区，保证0点后更新日志
 	)
 	if err != nil {
 		//panic(err)
 		return nil, err
 	}
 	return hook, nil
+}
+
+type Clock1 struct {
+	time.Time
+}
+
+func (t *Clock1) Now() time.Time {
+	// 东八区的基础上加8小时，才会转成当前日期的日志命。具体看rotatelogs.getFilename
+	now := time.Now()
+	return now.Add(time.Hour * 8)
 }

@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/qiushenglei/gin-skeleton/pkg/logs"
+	"time"
 )
 
 var (
@@ -25,4 +26,8 @@ type Job struct {
 func ExampleJob() {
 	fmt.Println("run Job")
 	logs.Log.Error(context.Background(), "run Job")
+
+	time.Sleep(5 * time.Second)
+
+	fmt.Println("安全退出")
 }

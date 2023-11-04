@@ -70,6 +70,7 @@ const (
 	CodeNoGinContext = 10087
 	CodeNoLogin      = 10088
 	CodeNoGetTable   = 100889
+	CodeAuthFail     = 10090
 
 	CodeChildQueryNilOnQueryCond = 6666 // 生成查询条件时，子查询为空
 
@@ -84,4 +85,5 @@ var (
 	ErrNoLogin       = NewBizErrx(CodeNoLogin, "no login")
 	ErrGetTableName  = NewBizErrx(CodeNoGetTable, "get table name fail")
 	ErrChildQueryNil = NewBizErrx(CodeChildQueryNilOnQueryCond, "child query is nil")
+	ErrAuthFailed    = NewBizErrx(CodeAuthFail, "auth failed")
 )

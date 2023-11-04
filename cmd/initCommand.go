@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"context"
+	"fmt"
 	"net"
 	"net/http"
 	"time"
@@ -137,10 +138,11 @@ func RunCrontab(cmd *cobra.Command, args []string) {
 	cronCtx := c.Stop()
 
 	// 如果5s,未结束超时结束
-	timeout, _ := context.WithTimeout(cronCtx, time.Second*5)
+	timeout, _ := context.WithTimeout(cronCtx, time.Second*15)
 
 	select {
 	case <-timeout.Done():
+		fmt.Println("timeout done")
 	}
 
 	GracefulShutdown(closers)
