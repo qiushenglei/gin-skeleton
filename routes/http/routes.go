@@ -60,6 +60,11 @@ func RegisterRoutes() (r *gin.Engine) {
 		OrderAPI.POST("/find", controller.FindAll)
 	}
 
+	RedisApi := r.Group("redis")
+	{
+		RedisApi.POST("string", controller.RedisString)
+	}
+
 	// RET
 	return
 }

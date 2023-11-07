@@ -92,8 +92,12 @@ func LogRequest() gin.HandlerFunc {
 
 		// 正常记录日志
 		var rb map[string]interface{}
-		// requestBody内容里有tab和\r\n,可以用jsondecode和encode过滤掉
-		requestBodyBytes := utils.JsonBytes2String(requestBody, &rb)
+		var requestBodyBytes []byte
+		if len(requestBody) > 0 {
+			// requestBody内容里有tab和\r\n,可以用jsondecode和encode过滤掉
+			requestBodyBytes = utils.JsonBytes2String(requestBody, &rb)
+		}
+
 		logs.Log.Info(
 			c,
 			zap.Any("requestBody", string(requestBodyBytes)),
