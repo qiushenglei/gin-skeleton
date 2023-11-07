@@ -3,7 +3,7 @@ package eventx
 import "context"
 
 // 通知事件
-type handler func(ctx context.Context) error
+type handler func(c context.Context, param any) error
 
 type ObserverOption func(*Observer)
 

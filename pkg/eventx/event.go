@@ -49,14 +49,16 @@ func (e *EventObj) Watch() error {
 }
 
 // 事件通知观察者
-func (e *EventObj) Notice() error {
+func (e *EventObj) Notice(ctx context.Context, param any) error {
 	wg := sync.WaitGroup{}
 	c, _ := context.WithCancel(e.ctx)
 	for _, v := range e.Observers {
 		wg.Add(1)
 		go func() {
-			wg.Done()
-			v.Handler(c)
+			defer wg.Done()
+			if err := v.Handler(c, param); err != nil {
+				// TODO::do something
+			}
 		}()
 	}
 	return nil

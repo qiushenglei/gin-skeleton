@@ -10,7 +10,7 @@ var SMSObserver = eventx.NewObserver(
 	eventx.WithHandler(SMSHandler),
 )
 
-func SMSHandler(ctx context.Context) error {
+func SMSHandler(ctx context.Context, param any) error {
 	// 发送sms
 	return nil
 }

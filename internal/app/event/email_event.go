@@ -10,7 +10,7 @@ var EmailObserver = eventx.NewObserver(
 	eventx.WithHandler(EmailHandler),
 )
 
-func EmailHandler(ctx context.Context) error {
+func EmailHandler(ctx context.Context, param any) error {
 	// 发送email
 	return nil
 }

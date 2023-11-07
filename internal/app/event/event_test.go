@@ -12,5 +12,5 @@ func TestEvent(t *testing.T) {
 		eventx.WithEventName(OrderEvent),
 		eventx.WithContext(ctx),
 		eventx.WithObserver(SMSObserver, EmailObserver),
-	).Notice()
+	).Notice(ctx, OrderEventParam{})
 }
