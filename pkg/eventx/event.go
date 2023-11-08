@@ -2,64 +2,76 @@ package eventx
 
 import (
 	"context"
+	"github.com/qiushenglei/gin-skeleton/pkg/logs"
 	"sync"
 )
 
-type Event interface {
+type EventInferface interface {
 	Watch() error
-	Notice() error
+	Notice(ctx context.Context, any2 any) error
 }
 
-type EventOption func(obj *EventObj)
+type EventOptionFunc func(obj *EventOption)
 
-// 事件对象
-type EventObj struct {
+type EventOption struct {
 	Name      string
 	Observers []*Observer
-	ctx       context.Context
-	Event
 }
 
-func NewEvent(...EventOption) *EventObj {
-
-	return &EventObj{}
+// 事件对象
+type Event struct {
+	options *EventOption
+	EventInferface
 }
 
-func WithContext(ctx context.Context) EventOption {
-	return func(e *EventObj) {
-		e.ctx = ctx
+func NewEvent(op ...EventOptionFunc) EventInferface {
+	option := &EventOption{}
+	for _, apply := range op {
+		apply(option)
 	}
+
+	o := &Event{
+		options: option,
+	}
+	return o
 }
 
-func WithEventName(name string) EventOption {
-	return func(e *EventObj) {
+func WithEventName(name string) EventOptionFunc {
+	return func(e *EventOption) {
 		e.Name = name
 	}
 }
 
-func WithObserver(observers ...*Observer) EventOption {
-	return func(e *EventObj) {
+func WithObserver(observers ...*Observer) EventOptionFunc {
+	return func(e *EventOption) {
 		e.Observers = observers
 		return
 	}
 }
 
-func (e *EventObj) Watch() error {
+func (e *Event) Watch() error {
 	return nil
 }
 
 // 事件通知观察者
-func (e *EventObj) Notice(ctx context.Context, param any) error {
+func (e *Event) Notice(ctx context.Context, param any) error {
 	wg := sync.WaitGroup{}
-	c, _ := context.WithCancel(e.ctx)
-	for _, v := range e.Observers {
+	c, _ := context.WithCancel(ctx)
+	for _, v := range e.options.Observers {
 		wg.Add(1)
+		tmp := v
 		go func() {
 			defer wg.Done()
-			if err := v.Handler(c, param); err != nil {
+			defer func() {
+				if r := recover(); r != nil {
+					logs.Log.Error(c, r)
+				}
+			}()
+			if err := tmp.Handler(c, param); err != nil {
 				// TODO::do something
 			}
 		}()
 	}
+	wg.Wait()
 	return nil
 }

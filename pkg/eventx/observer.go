@@ -5,26 +5,37 @@ import "context"
 // 通知事件
 type handler func(c context.Context, param any) error
 
-type ObserverOption func(*Observer)
+type ObserverOptionFunc func(*ObserverOption)
 
-// 观察者
-type Observer struct {
+type ObserverOption struct {
 	Name    string
 	Handler handler
 }
 
-func NewObserver(...ObserverOption) *Observer {
-	return &Observer{}
+// 观察者
+type Observer struct {
+	ObserverOption
 }
 
-func WithName(name string) ObserverOption {
-	return func(o *Observer) {
+func NewObserver(options ...ObserverOptionFunc) *Observer {
+	option := &ObserverOption{}
+	for _, apply := range options {
+		apply(option)
+	}
+
+	return &Observer{
+		ObserverOption: *option,
+	}
+}
+
+func WithName(name string) ObserverOptionFunc {
+	return func(o *ObserverOption) {
 		o.Name = name
 	}
 }
 
-func WithHandler(h handler) ObserverOption {
-	return func(o *Observer) {
+func WithHandler(h handler) ObserverOptionFunc {
+	return func(o *ObserverOption) {
 		o.Handler = h
 	}
 }
