@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"fmt"
 	"github.com/anguloc/zet/pkg/safe"
 	"github.com/gin-gonic/gin"
 	"github.com/qiushenglei/gin-skeleton/internal/app/entity"
@@ -36,4 +37,13 @@ func UploadImg(c *gin.Context) {
 		panic(err)
 	}
 	utils.Response(c, "success", nil)
+}
+
+func GetImg(c *gin.Context) {
+	body := &entity.GetImgRequest{}
+	if err := validatorx.Validate(c, body); err != nil {
+		panic(err)
+	}
+
+	fmt.Println(body.ID)
 }

@@ -47,8 +47,10 @@ func RegisterRoutes() (r *gin.Engine) {
 	// upload
 	UploadAPI := r.Group("/upload")
 	UploadAPI.POST("/uploadImg", controller.UploadImg)
+	UploadAPI.GET("/getImg", controller.GetImg)
 
 	// login test
+	r.GET("/loginr", controller.LoginRedirect)
 	r.POST("/login", controller.Login)
 	loginAPI := r.Group("/login/", middleware2.AuthRequest())
 	{
@@ -58,11 +60,14 @@ func RegisterRoutes() (r *gin.Engine) {
 	OrderAPI := r.Group("/order/", middleware2.AuthRequest())
 	{
 		OrderAPI.POST("/find", controller.FindAll)
+		OrderAPI.POST("/update", controller.UpdateOrder)
 	}
 
 	RedisApi := r.Group("redis")
 	{
 		RedisApi.POST("string", controller.RedisString)
+		RedisApi.POST("hyper", controller.RedisHyperLogLog)
+		RedisApi.GET("mutex", controller.RedisMutex)
 	}
 
 	// RET

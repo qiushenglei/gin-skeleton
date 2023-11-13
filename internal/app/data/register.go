@@ -5,11 +5,11 @@ import (
 	"crypto/tls"
 	"fmt"
 	"github.com/elastic/go-elasticsearch/v8"
+	"github.com/go-redis/redis/v8"
 	"github.com/qiushenglei/gin-skeleton/internal/app/configs"
 	"github.com/qiushenglei/gin-skeleton/internal/app/data/mysql/canal_test/query"
 	isolateModel "github.com/qiushenglei/gin-skeleton/internal/app/data/mysql/rw_isolate/model"
 	isolateQuery "github.com/qiushenglei/gin-skeleton/internal/app/data/mysql/rw_isolate/query"
-
 	"github.com/qiushenglei/gin-skeleton/pkg/dbtoes"
 	"github.com/qiushenglei/gin-skeleton/pkg/logs"
 	"gorm.io/gorm/logger"
@@ -18,7 +18,6 @@ import (
 	"time"
 
 	"github.com/IBM/sarama"
-	redis "github.com/go-redis/redis/v8"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"gorm.io/driver/mysql"
@@ -128,6 +127,7 @@ func RegisterMySQL() func() error {
 	var err error
 	DBConfig := &gorm.Config{
 		//Logger: logger.Default.LogMode(logger.Info),
+
 		Logger: mysqlLogger,
 	}
 	username := configs.EnvConfig.GetString("DB_SPEC_RW_USERNAME")
@@ -145,6 +145,8 @@ func RegisterMySQL() func() error {
 	}
 
 	rawdb, err := MySQLCanalTestClient.DB()
+	rawdb.SetMaxIdleConns(6)
+	rawdb.SetMaxOpenConns(6 * 2)
 	if err != nil {
 		panic(err)
 	}

@@ -12,7 +12,7 @@ import (
 
 var OrderTablePower = 2 //2^TablePower = 表数量。用的map的分表和扩容方法
 
-func GetTableName(AppID string) string {
+func GetOrderTableName(AppID string) string {
 	// 这里按位与
 	var num int
 	hash := crc64.New(crc64.MakeTable(crc64.ISO))
@@ -25,7 +25,7 @@ func GetTableName(AppID string) string {
 	return "order" + strconv.Itoa(num)
 }
 
-func FindAll(c context.Context, request *entity.FindOrderRequest) ([]*model.Order1, int64, error) {
+func FindOrder(c context.Context, request *entity.FindOrderRequest) ([]*model.Order1, int64, error) {
 	if request.AppID == "" {
 		panic(errorpkg.ErrParam)
 	}
@@ -34,7 +34,7 @@ func FindAll(c context.Context, request *entity.FindOrderRequest) ([]*model.Orde
 	err := query.Q.Transaction(func(tx *query.Query) error {
 		order := tx.Order1
 		var err error
-		res, count, err = order.Table(GetTableName(request.AppID)).WithContext(c).
+		res, count, err = order.Table(GetOrderTableName(request.AppID)).WithContext(c).
 			Where(order.AppID.Eq(request.AppID)).FindByPage((*request.Page-1)*(*request.PageSize), *request.Page)
 		if err != nil {
 			panic(err)
@@ -43,4 +43,22 @@ func FindAll(c context.Context, request *entity.FindOrderRequest) ([]*model.Orde
 	})
 	err = errorpkg.ErrNoLogin
 	return res, count, err
+}
+
+func UpdateOrder(c context.Context, request *entity.UpdateOrderRequest) (int64, error) {
+	if request.AppID == "" {
+		panic(errorpkg.ErrParam)
+	}
+
+	m := query.Q.Order1
+
+	o := model.Order1{
+		Fee: 10,
+	}
+
+	info, err := m.Table(GetOrderTableName(request.AppID)).WithContext(c).Where(m.AppID.Eq(request.AppID)).Where(m.OrderID.Eq(request.OrderID)).Select(m.OrderID).Updates(o)
+	if err != nil {
+		panic(err)
+	}
+	return info.RowsAffected, err
 }

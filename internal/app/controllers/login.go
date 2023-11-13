@@ -34,3 +34,7 @@ func Login(c *gin.Context) {
 	loginInfo := services.Login(c, body)
 	utils.Response(c, loginInfo, nil)
 }
+
+func LoginRedirect(c *gin.Context) {
+	c.Redirect(302, "https://baidu.com")
+}

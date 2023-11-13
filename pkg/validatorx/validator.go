@@ -16,7 +16,12 @@ func Validate(ctx context.Context, body interface{}) error {
 	}
 
 	// 绑定struct
-	err := c.ShouldBindBodyWith(body, binding.JSON)
+	var err error
+	if c.Request.Method == "GET" {
+		err = c.ShouldBind(body)
+	} else {
+		err = c.ShouldBindBodyWith(body, binding.JSON)
+	}
 	if err != nil {
 		return errorpkg.NewBizErrx(errorpkg.CodeBodyBind, err.Error())
 	}

@@ -20,6 +20,7 @@ import (
 	"github.com/robfig/cron/v3"
 	"github.com/spf13/cobra"
 	"google.golang.org/grpc"
+	_ "net/http/pprof"
 )
 
 var (

@@ -20,3 +20,15 @@ func FindAll(c *gin.Context) {
 		int(count),
 	}, err)
 }
+
+func UpdateOrder(c *gin.Context) {
+	body := &entity.UpdateOrderRequest{}
+	if err := validatorx.Validate(c, body); err != nil {
+		panic(err)
+	}
+
+	count, err := services.UpdateOrder(c, body)
+	utils.Response(c, &entity.UpdateOrderResponse{
+		int(count),
+	}, err)
+}

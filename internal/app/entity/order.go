@@ -12,3 +12,12 @@ type FindOrderResponse struct {
 	Data  []*model.Order1 `json:"data"`
 	Count int             `json:"count"`
 }
+
+type UpdateOrderRequest struct {
+	AppID   string `json:"app_id" validate:"required,len=5"`
+	OrderID string `json:"order_id,omitempty" validate:"gt=10,lt=30"`
+}
+
+type UpdateOrderResponse struct {
+	Count int `json:"count"`
+}
