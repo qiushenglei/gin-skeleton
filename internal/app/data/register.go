@@ -115,8 +115,8 @@ func RegisterMySQL() func() error {
 	}
 
 	// mysql logger
-	mysqlLogger := logger.New(
-		logs.Log, //将本地的logger日志注册
+	mysqlLogger := logs.NewGormLogger(
+		logs.Log,
 		logger.Config{
 			Colorful:             true,
 			LogLevel:             logger.Info,
@@ -143,6 +143,7 @@ func RegisterMySQL() func() error {
 	if configs.EnvConfig.GetString("RUN_MODE") == "DEBUG" {
 		MySQLCanalTestClient = MySQLCanalTestClient.Debug()
 	}
+	MySQLCanalTestClient.Callback().Query().Register("aaa", Ceshi())
 
 	rawdb, err := MySQLCanalTestClient.DB()
 	rawdb.SetMaxIdleConns(6)
@@ -178,6 +179,8 @@ func RegisterMySQL() func() error {
 			"order3", "order4", //order是分表的 order3 和 order3 只可以去从库2读取数据
 		))
 
+	//MySQLCanalTestClient.AutoMigrate()
+	MySQLCanalTestClient.Callback().Query().Register("bbb", Ceshi())
 	// 注册gorm generate model
 	query.SetDefault(MySQLCanalTestClient)
 	isolateQuery.SetDefault(MySQLIsolateClient)
@@ -225,4 +228,13 @@ func RegisterES() {
 	}
 	//ESClient = dbtoes.NewESClient(cfg)
 	TypedESClient = dbtoes.NewESTypedClient1(cfg)
+}
+
+func Ceshi() func(*gorm.DB) {
+	return func(db *gorm.DB) {
+		fmt.Println("is before_test")
+		//db.LogMode(true)
+		//db.SetLogger(dbtoes.NewLogger())
+		//db.Set("gorm:table_options", "ENGINE=InnoDB")
+	}
 }

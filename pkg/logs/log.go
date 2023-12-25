@@ -134,7 +134,7 @@ func getWriter(filename, fileext string) (io.Writer, error) {
 		rotatelogs.WithMaxAge(time.Hour*24*30),
 		rotatelogs.WithRotationTime(time.Hour*24),
 		rotatelogs.WithClock(clock),
-		//rotatelogs.WithLocation(time.UTC), //设置成东8区，保证0点后更新日志
+		rotatelogs.WithLocation(time.UTC), //设置成东8区，保证0点后更新日志
 	)
 	if err != nil {
 		//panic(err)

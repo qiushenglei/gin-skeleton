@@ -14,6 +14,6 @@ type LoggedRequest struct {
 }
 
 type LoginRequest struct {
-	AppID  string `json:"app_id" validate:"required,len=6"`
+	AppID  string `json:"app_id" validate:"required,len=5"`
 	UserID uint   `json:"user_id"`
 }

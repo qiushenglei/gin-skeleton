@@ -24,6 +24,7 @@ func NewClass(class *entity.ClassInfo) *model.Class {
 		AddTime:    now,
 		UpdateTime: &now,
 	}
+
 }
 
 func GetClassBySearchCond(c *gin.Context, cond *entity.SearchCond) (*model.Class, error) {
