@@ -24,6 +24,10 @@ const (
 	FileLogWrite
 )
 
+func NewRDB() *RDB {
+	return &RDB{}
+}
+
 func (r *RDB) RegisterMySQL() (*gorm.DB, error) {
 
 	var log logger.Interface
@@ -48,7 +52,7 @@ func (r *RDB) RegisterMySQL() (*gorm.DB, error) {
 
 		Logger: log,
 	}
-	dsn := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s?timeout=5s&readTimeout=5s&writeTimeout=1s&parseTime=true&loc=Local&charset=utf8mb4,utf8", r.Username, r.Password, r.Host, r.Port, r.DBName)
+	dsn := fmt.Sprintf("%s:%s@tcp(%s:%d)/%s?timeout=5s&readTimeout=5s&writeTimeout=1s&parseTime=true&loc=Local&charset=utf8mb4,utf8", r.Username, r.Password, r.Host, r.Port, r.DBName)
 	cli, err := gorm.Open(mysql.Open(dsn), DBConfig)
 	if err != nil {
 		return cli, err
