@@ -2,10 +2,12 @@ package cmd
 
 import (
 	"fmt"
+	"github.com/qiushenglei/gin-skeleton/internal/app/configs"
 	"github.com/qiushenglei/gin-skeleton/internal/app/data"
 	"github.com/qiushenglei/gin-skeleton/internal/app/mq"
 	"github.com/qiushenglei/gin-skeleton/internal/app/sentinelx"
 	"github.com/qiushenglei/gin-skeleton/pkg/logs"
+	"github.com/qiushenglei/gin-skeleton/pkg/safe"
 	"golang.org/x/net/context"
 	"os"
 	"os/signal"
@@ -23,7 +25,7 @@ func RegistAll(serverName string) (closers []func() error) {
 	}
 
 	// 注册 Logger
-	syncers, err := logs.RegisterLogger()
+	syncers, err := logs.RegisterLogger(safe.Path(configs.EnvConfig.GetString("LOG_PATH")), configs.EnvConfig.GetString("LOG_EXT"))
 	if err != nil {
 		panic("Failed to regist logger: " + err.Error())
 	}

@@ -2,9 +2,7 @@ package logs
 
 import (
 	"fmt"
-	"github.com/anguloc/zet/pkg/safe"
 	rotatelogs "github.com/lestrrat/go-file-rotatelogs"
-	"github.com/qiushenglei/gin-skeleton/internal/app/configs"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 	"io"
@@ -47,9 +45,9 @@ var levelEnableFuncMap = map[string]zap.LevelEnablerFunc{
 }
 
 // RegisterLogger 注册日志
-func RegisterLogger() (func() error, error) {
+func RegisterLogger(path, ext string) (func() error, error) {
 	var err error
-	Log, err = getInitLogger(safe.Path(configs.EnvConfig.GetString("LOG_PATH")), configs.EnvConfig.GetString("LOG_EXT"))
+	Log, err = getInitLogger(path, ext)
 	//Log.Warn()
 	if err != nil {
 		return nil, err
